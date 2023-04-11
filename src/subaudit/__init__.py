@@ -3,10 +3,7 @@
 __all__ = [
     'audit',
     'addaudithook',
-    'subscribe',
-    'unsubscribe',
-    'listen',
-    'extract',
+    'Hook',  # FIXME: Write methods: subscribe, unsubscribe, listen, extract.
 ]
 
 try:
