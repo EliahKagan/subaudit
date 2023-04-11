@@ -1,17 +1,35 @@
 """Tests for the subaudit module."""
 
 import sys
-import unittest.mock
+from unittest.mock import Mock
 import uuid
 
 import pytest
 
 import subaudit
+from subaudit import Hook
 
 
-def _make_fake_event() -> str:
+@pytest.fixture
+def event() -> str:
     """Create a randomly generated fake event name."""
     return f'test-subaudit-{uuid.uuid4()}'
+
+
+@pytest.fixture
+def listener() -> Mock:
+    """Create a mock listener."""
+    return Mock()
+
+
+@pytest.fixture
+def hook() -> Hook:
+    """Create a Hook instance."""
+    return Hook()
+
+
+# FIXME: Change each skipif to xfail with a condition.
+#        Use a raises argument where appropriate.
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8),
@@ -40,13 +58,42 @@ def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
     assert subaudit.addaudithook is sysaudit.addaudithook
 
 
-def test_subscribed_listener_observes_event() -> None:
-    event = _make_fake_event()
-    listener = unittest.mock.Mock()
-    hook = subaudit.Hook()
+def test_subscribed_listener_observes_event(
+        event: str, listener: Mock, hook: Hook) -> None:
     hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_called_once_with('event', 'a', 'b', 'c')
+
+
+def test_unsubscribed_listener_does_not_observe_event(
+        event: str, listener: Mock, hook: Hook) -> None:
+    hook.subscribe(event, listener)
+    hook.unsubscribe(event, listener)
+    subaudit.audit(event, 'a', 'b', 'c')
+    listener.assert_not_called()
+
+
+def test_cannot_unsubscribe_if_never_subscribed(
+        event: str, listener: Mock, hook: Hook) -> None:
+    with pytest.raises(ValueError):
+        hook.unsubscribe(event, listener)
+
+
+def test_cannot_unsubscribe_if_no_longer_subscribed(
+        event: str, listener: Mock, hook: Hook) -> None:
+    hook.subscribe(event, listener)
+    hook.unsubscribe(event, listener)
+    with pytest.raises(ValueError):
+        hook.unsubscribe(event, listener)
+
+
+@pytest.mark.parametrize('count', [2, 3, 10])
+def test_repeat_subscribed_listener_observes_event_repeatedly(
+        count: int, event: str, listener: Mock, hook: Hook) -> None:
+    for _ in range(count):
+        hook.subscribe(event, listener)
+    subaudit.audit(event)
+    assert listener.call_count == count
 
 
 if __name__ == '__main__':
