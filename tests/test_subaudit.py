@@ -22,6 +22,14 @@ def _listener() -> Mock:
     return Mock()
 
 
+# FIXME: Put an appropriate type annotation on the request function parameter.
+@pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
+def _nonidentical_equal_listeners(request) -> list[Mock]:
+    # FIXME: Make them equal just to each other, not to all objects.
+    return [Mock(__eq__=Mock(return_value=True)) for _ in range(request.param)]
+
+
+
 @pytest.fixture(name='hook')
 def _hook() -> Hook:
     """Create a Hook instance."""
@@ -95,6 +103,12 @@ def test_listener_can_subscribe_multiple_events(
     assert listener.mock_calls == expected_calls
 
 
+# FIXME: Test that listeners are called in the order they are subscribed.
+
+
+# FIXME: Test that the remaining listeners are called after some unsubscribe.
+
+
 def test_cannot_unsubscribe_if_never_subscribed(
         event: str, listener: Mock, hook: Hook) -> None:
     with pytest.raises(ValueError):
@@ -152,7 +166,29 @@ def test_unsubscribe_keeps_other_listener(event: str, hook: Hook) -> None:
     listener2.assert_called_once_with('a', 'b', 'c')
 
 
-# FIXME: Test that unsubscribing removes the last-subscribed equal listener.
+def test_unsubscribe_removes_last_equal_listener(
+        nonidentical_equal_listeners: list[Mock], event: str, hook: Hook,
+) -> None:
+    for listener in nonidentical_equal_listeners:
+        hook.subscribe(event, listener)
+    hook.unsubscribe(event, nonidentical_equal_listeners[0])
+    subaudit.audit(event, 'a', 'b', 'c')
+    nonidentical_equal_listeners[-1].assert_not_called()
+
+
+# FIXME: Put an appropriate type annotation on the subtests function parameter.
+def test_unsubscribe_keeps_non_last_equal_listeners(
+        subtests, nonidentical_equal_listeners: list[Mock],
+        event: str, hook: Hook) -> None:
+    """Unsubscribing removes no equal listeners besides the last subscribed."""
+    for listener in nonidentical_equal_listeners:
+        hook.subscribe(event, listener)
+    hook.unsubscribe(event, nonidentical_equal_listeners[0])
+    subaudit.audit(event, 'a', 'b', 'c')
+
+    for index, listener in enumerate(nonidentical_equal_listeners[:-1]):
+        with subtests.test(listener_index=index):
+            listener.assert_called_once_with('a', 'b', 'c')
 
 
 # FIXME: Test subscribe and unsubscribe with multiple (unequal) listeners.
