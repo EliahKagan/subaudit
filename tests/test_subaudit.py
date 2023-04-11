@@ -87,13 +87,60 @@ def test_cannot_unsubscribe_if_no_longer_subscribed(
         hook.unsubscribe(event, listener)
 
 
-@pytest.mark.parametrize('count', [2, 3, 10])
-def test_repeat_subscribed_listener_observes_event_repeatedly(
+@pytest.mark.parametrize('count', [0, 2, 3, 10])
+def test_listener_observes_event_as_many_times_as_subscribed(
         count: int, event: str, listener: Mock, hook: Hook) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
     subaudit.audit(event)
     assert listener.call_count == count
+
+
+@pytest.mark.parametrize('count', [2, 3, 10])
+def test_can_unsubscribe_as_many_times_as_subscribed(
+        count:int, event: str, listener: Mock, hook: Hook) -> None:
+    for _ in range(count):
+        hook.subscribe(event, listener)
+    try:
+        for _ in range(count):
+            hook.subscribe(event, listener)
+    except ValueError as error:
+        pytest.fail(
+            f"Couldn't subscribe then unsubscribe {count} times: {error!r}")
+
+
+@pytest.mark.parametrize('count', [2, 3, 10])
+def test_cannot_unsubscribe_more_times_than_subscribed(
+        count: int, event: str, listener: Mock, hook: Hook) -> None:
+    for _ in range(count):
+        hook.subscribe(event, listener)
+    with pytest.raises(ValueError):
+        for _ in range(count + 1):
+            hook.subscribe(event, listener)
+
+
+# FIXME: Test that unsubscribing removes the last-subscribed equal listener.
+
+
+# FIXME: Test subscribe and unsubscribe with multiple (unequal) listeners.
+
+
+# FIXME: Test the context managers from Hook.listening and Hook.extracting.
+
+
+# FIXME: Test that a listener cannot be unsubscribed from a different Hook.
+
+
+# FIXME: Test that a Hook's first subscription adds an audit hook.
+
+
+# FIXME: Test that a Hook's subsequent subscriptions don't add audit hooks.
+
+
+# FIXME: Test that a second Hook's first subscription adds an audit hook.
+
+
+# FIXME: Retest some common cases with audit events from the standard library.
 
 
 if __name__ == '__main__':

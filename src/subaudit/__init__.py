@@ -3,7 +3,8 @@
 __all__ = [
     'audit',
     'addaudithook',
-    'Hook',  # FIXME: Write methods: subscribe, unsubscribe, listen, extract.
+    'Hook',  # FIXME: Methods: subscribe, unsubscribe, listening, extracting.
+    'skip_if_unavailable',
 ]
 
 try:
