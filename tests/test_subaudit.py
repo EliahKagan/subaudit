@@ -1,7 +1,7 @@
 """Tests for the subaudit module."""
 
 import sys
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 import uuid
 
 import pytest
@@ -10,20 +10,20 @@ import subaudit
 from subaudit import Hook
 
 
-@pytest.fixture
-def event() -> str:
+@pytest.fixture(name='event')
+def _event() -> str:
     """Create a randomly generated fake event name."""
     return f'test-subaudit-{uuid.uuid4()}'
 
 
-@pytest.fixture
-def listener() -> Mock:
+@pytest.fixture(name='listener')
+def _listener() -> Mock:
     """Create a mock listener."""
     return Mock()
 
 
-@pytest.fixture
-def hook() -> Hook:
+@pytest.fixture(name='hook')
+def _hook() -> Hook:
     """Create a Hook instance."""
     return Hook()
 
@@ -73,6 +73,28 @@ def test_unsubscribed_listener_does_not_observe_event(
     listener.assert_not_called()
 
 
+def test_subscribed_listener_does_not_observe_other_event(
+        listener: Mock, hook: Hook) -> None:
+    """Subscribing to one event doesn't observe other events."""
+    event1 = _event()
+    event2 = _event()
+    hook.subscribe(event1, listener)
+    subaudit.audit(event2, 'a', 'b', 'c')
+    listener.assert_not_called()
+
+
+def test_listener_can_subscribe_multiple_events(
+        listener: Mock, hook: Hook) -> None:
+    expected_calls = [call('a', 'b', 'c'), call('d', 'e')]
+    event1 = _event()
+    event2 = _event()
+    hook.subscribe(event1)
+    hook.subscribe(event2)
+    subaudit.audit(event1, 'a', 'b', 'c')
+    subaudit.audit(event2, 'd', 'e')
+    assert listener.mock_calls == expected_calls
+
+
 def test_cannot_unsubscribe_if_never_subscribed(
         event: str, listener: Mock, hook: Hook) -> None:
     with pytest.raises(ValueError):
@@ -117,6 +139,17 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
     with pytest.raises(ValueError):
         for _ in range(count + 1):
             hook.subscribe(event, listener)
+
+
+def test_unsubscribe_keeps_other_listener(event: str, hook: Hook) -> None:
+    """Unsubscribing one listener doesn't prevent another from observing."""
+    listener1 = _listener()
+    listener2 = _listener()
+    hook.subscribe(event, listener1)
+    hook.subscribe(event, listener2)
+    hook.unsubscribe(event, listener1)
+    subaudit.audit(event, 'a', 'b', 'c')
+    listener2.assert_called_once_with('a', 'b', 'c')
 
 
 # FIXME: Test that unsubscribing removes the last-subscribed equal listener.
