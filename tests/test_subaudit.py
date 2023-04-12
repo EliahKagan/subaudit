@@ -1,5 +1,6 @@
 """Tests for the subaudit module."""
 
+import contextlib
 import functools
 import sys
 from typing import Callable, Iterator, TypeVar
@@ -12,6 +13,26 @@ import subaudit
 from subaudit import Hook
 
 _T = TypeVar('_T')
+
+
+class _FakeError(Exception):
+    """Fake exception for testing."""
+
+
+# FIXME: Put an appropriate type annotation on the request function parameter.
+@pytest.fixture(name='maybe_raise', params=[False, True])
+def _maybe_raise(request) -> Callable[[], None]:
+    """
+    A function that, when called, either raises _FakeError or do nothing.
+
+    This parameterized fixture multiplies tests that use it, covering both the
+    raising and non-raising cases.
+    """
+    def maybe_raise_now():
+        if request.param:
+            raise _FakeError
+
+    return maybe_raise_now
 
 
 def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
@@ -147,13 +168,12 @@ def test_subscribed_listener_does_not_observe_other_event(
 def test_listener_can_subscribe_multiple_events(
     hook: Hook, some_events: Iterator[str], listener: Mock,
 ) -> None:
-    expected_calls = [call('a', 'b', 'c'), call('d', 'e')]
     event1, event2 = some_events
     hook.subscribe(event1)
     hook.subscribe(event2)
     subaudit.audit(event1, 'a', 'b', 'c')
     subaudit.audit(event2, 'd', 'e')
-    assert listener.mock_calls == expected_calls
+    assert listener.mock_calls == [call('a', 'b', 'c'), call('d', 'e')]
 
 
 def test_listeners_called_in_subscribe_order(
@@ -239,7 +259,7 @@ def test_listener_observes_event_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_can_unsubscribe_as_many_times_as_subscribed(
-    count:int, hook: Hook, event: str, listener: Mock,
+    count: int, hook: Hook, event: str, listener: Mock,
 ) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
@@ -299,7 +319,66 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
             listener.assert_called_once_with('a', 'b', 'c')
 
 
-# FIXME: Test the context managers from Hook.listening and Hook.extracting.
+def test_listening_listener_does_not_observe_before_enter(
+    hook: Hook, event: str, listener: Mock,
+) -> None:
+    """The call to listening does not itself subscribe."""
+    context = hook.listening(event, listener)
+    subaudit.audit(event, 'a', 'b', 'c')
+    with context:
+        pass
+    listener.assert_not_called()
+
+
+def test_listening_listener_observes_between_enter_and_exit(
+    hook: Hook, event: str, listener: Mock,
+) -> None:
+    """In the block of a with statement, the listener is subscribed."""
+    with hook.listening(event, listener):
+        subaudit.audit(event, 'a', 'b', 'c')
+    listener.assert_called_once_with('a', 'b', 'c')
+
+
+def test_listening_listener_does_not_observe_after_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
+):
+    """After exiting the with statement, the listener is not subscribed."""
+    with contextlib.suppress(_FakeError):
+        with hook.listening(event, listener):
+            maybe_raise()
+    subaudit.audit(event, 'a', 'b', 'c')
+    listener.assert_not_called()
+
+
+def test_listening_listener_observes_only_between_enter_and_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
+):
+    """The listening context manager in (simple yet) nontrivial usage."""
+    subaudit.audit(event, 'a')
+    subaudit.audit(event, 'b', 'c')
+
+    with contextlib.suppress(_FakeError):
+        with hook.listening(event, listener):
+            subaudit.audit('d')
+            subaudit.audit('e', 'f')
+            maybe_raise()
+
+    subaudit.audit(event, 'g')
+    subaudit.audit(event, 'h', 'i')
+
+    assert listener.mock_calls == [call('d'), call('e', 'f')]
+
+
+def test_listening_enter_returns_none(
+    hook: Hook, event: str, listener: Mock,
+):
+    """The listening context manager isn't meant to be used with "as"."""
+    with hook.listening(event, listener) as context:
+        pass
+    assert context is None
+
+
+# FIXME: Test the Hook.extracting context manager function.
 
 
 # FIXME: Test that a listener cannot be unsubscribed from a different Hook.
