@@ -23,7 +23,7 @@ class _FakeError(Exception):
 @pytest.fixture(name='maybe_raise', params=[False, True])
 def _maybe_raise(request) -> Callable[[], None]:
     """
-    A function that, when called, either raises _FakeError or do nothing.
+    A function that, when called, either raises _FakeError or does nothing.
 
     This parameterized fixture multiplies tests that use it, covering both the
     raising and non-raising cases.
