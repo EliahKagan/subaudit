@@ -1,6 +1,8 @@
 """Tests for the subaudit module."""
 
+import itertools
 import sys
+from typing import Callable, Iterator, TypeVar
 from unittest.mock import Mock, call
 import uuid
 
@@ -9,31 +11,72 @@ import pytest
 import subaudit
 from subaudit import Hook
 
+_T = TypeVar('_T')
 
-@pytest.fixture(name='event')
-def _event() -> str:
+
+def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
+    """Yield indefinitely many elements, each by calling the supplier."""
+    while True:
+        yield supplier()
+
+
+def _make_event() -> str:
     """Create a randomly generated fake event name."""
     return f'test-subaudit-{uuid.uuid4()}'
 
 
-@pytest.fixture(name='listener')
-def _listener() -> Mock:
+@pytest.fixture(name='event')
+def _event() -> str:
+    """Randomly generated fake event name."""
+    return _make_event()
+
+
+@pytest.fixture(name='some_events')
+def _some_events() -> Iterator[str]:
+    """Iterator that gives as many fake event names as needed."""
+    return _generate(_make_event)
+
+
+def _make_listener() -> Mock:
     """Create a mock listener."""
     return Mock()
+
+
+@pytest.fixture(name='listener')
+def _listener() -> Mock:
+    """Mock listener."""
+    return _make_listener()
+
+
+@pytest.fixture(name='some_listeners')
+def _some_listeners() -> Iterator[Mock]:
+    """Iterator that gives as many mock listeners as needed."""
+    return _generate(_make_listener)
 
 
 # FIXME: Put an appropriate type annotation on the request function parameter.
 @pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
 def _nonidentical_equal_listeners(request) -> list[Mock]:
+    """List of listeners that are different objects but all equal."""
     # FIXME: Make them equal just to each other, not to all objects.
     return [Mock(__eq__=Mock(return_value=True)) for _ in range(request.param)]
 
 
+def _make_hook() -> Hook:
+    """Create a hook instance."""
+    return Hook()
+
 
 @pytest.fixture(name='hook')
 def _hook() -> Hook:
-    """Create a Hook instance."""
-    return Hook()
+    """Hook instance."""
+    return _make_hook()
+
+
+@pytest.fixture(name='some_hooks')
+def _some_hooks():
+    """Iterator that gives as many Hook instances as needed."""
+    return _generate(_make_hook)
 
 
 # FIXME: Change each skipif to xfail with a condition.
@@ -82,20 +125,18 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-        listener: Mock, hook: Hook) -> None:
+        some_events: Iterator[str], listener: Mock, hook: Hook) -> None:
     """Subscribing to one event doesn't observe other events."""
-    event1 = _event()
-    event2 = _event()
+    event1, event2 = some_events
     hook.subscribe(event1, listener)
     subaudit.audit(event2, 'a', 'b', 'c')
     listener.assert_not_called()
 
 
 def test_listener_can_subscribe_multiple_events(
-        listener: Mock, hook: Hook) -> None:
+        some_events: Iterator[str], listener: Mock, hook: Hook) -> None:
     expected_calls = [call('a', 'b', 'c'), call('d', 'e')]
-    event1 = _event()
-    event2 = _event()
+    event1, event2 = some_events
     hook.subscribe(event1)
     hook.subscribe(event2)
     subaudit.audit(event1, 'a', 'b', 'c')
@@ -155,10 +196,10 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
             hook.subscribe(event, listener)
 
 
-def test_unsubscribe_keeps_other_listener(event: str, hook: Hook) -> None:
+def test_unsubscribe_keeps_other_listener(
+        event: str, some_listeners: Iterator[Mock], hook: Hook) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
-    listener1 = _listener()
-    listener2 = _listener()
+    listener1, listener2 = some_listeners
     hook.subscribe(event, listener1)
     hook.subscribe(event, listener2)
     hook.unsubscribe(event, listener1)
