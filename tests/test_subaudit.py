@@ -28,7 +28,7 @@ def _maybe_raise(request) -> Callable[[], None]:
     This parameterized fixture multiplies tests that use it, covering both the
     raising and non-raising cases.
     """
-    def maybe_raise_now():
+    def maybe_raise_now() -> None:
         if request.param:
             raise _FakeError
 
@@ -95,7 +95,7 @@ def _hook() -> Hook:
 
 
 @pytest.fixture(name='some_hooks')
-def _some_hooks():
+def _some_hooks() -> Iterator[Hook]:
     """Iterator that gives as many Hook instances as needed."""
     return _generate(_make_hook)
 
@@ -341,7 +341,7 @@ def test_listening_listener_observes_between_enter_and_exit(
 
 def test_listening_listener_does_not_observe_after_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
-):
+) -> None:
     """After exiting the with statement, the listener is not subscribed."""
     with contextlib.suppress(_FakeError):
         with hook.listening(event, listener):
@@ -352,7 +352,7 @@ def test_listening_listener_does_not_observe_after_exit(
 
 def test_listening_listener_observes_only_between_enter_and_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
-):
+) -> None:
     """The listening context manager in (simple yet) nontrivial usage."""
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
@@ -371,7 +371,7 @@ def test_listening_listener_observes_only_between_enter_and_exit(
 
 def test_listening_enter_returns_none(
     hook: Hook, event: str, listener: Mock,
-):
+) -> None:
     """The listening context manager isn't meant to be used with "as"."""
     with hook.listening(event, listener) as context:
         pass
