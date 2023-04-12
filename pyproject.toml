@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "subaudit"
 version = "0.1.0"
-description = "Subscribe and unsubscribe on specific audit events"
+description = "Subscribe and unsubscribe for specific audit events"
 authors = ["Eliah Kagan <degeneracypressure@gmail.com>"]
 license = "0BSD"
 readme = "README.md"

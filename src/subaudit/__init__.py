@@ -1,4 +1,4 @@
-"""subaudit: Subscribe and unsubscribe on specific audit events."""
+"""subaudit: Subscribe and unsubscribe for specific audit events."""
 
 __all__ = [
     'audit',
