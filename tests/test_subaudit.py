@@ -87,8 +87,22 @@ def _some_listeners() -> Iterator[Mock]:
 @pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
 def _nonidentical_equal_listeners(request: FixtureRequest) -> list[Mock]:
     """List of listeners that are different objects but all equal."""
-    # FIXME: Make them equal just to each other, not to all objects.
-    return [Mock(__eq__=Mock(return_value=True)) for _ in range(request.param)]
+    group_key = object()
+
+    def in_group(other: object) -> bool:
+        try:
+            return other.group_key is group_key
+        except AttributeError:
+            return NotImplemented
+
+    def make_mock() -> Mock:
+        return Mock(
+            __eq__=Mock(side_effect=in_group),
+            __hash__=Mock(return_value=hash(group_key)),
+            group_key=group_key,
+        )
+
+    return [make_mock() for _ in range(request.param)]
 
 
 def _make_hook() -> Hook:
