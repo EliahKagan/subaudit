@@ -387,7 +387,7 @@ def test_listening_listener_does_not_observe_after_exit(
 def test_listening_listener_observes_only_between_enter_and_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
 ) -> None:
-    """The listening context manager in (simple yet) nontrivial usage."""
+    """The listening context manager works in (simple yet) nontrivial usage."""
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
