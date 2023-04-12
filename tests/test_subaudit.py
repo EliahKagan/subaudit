@@ -83,41 +83,51 @@ def _some_hooks():
 #        Use a raises argument where appropriate.
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8),
-                    reason="Python 3.8+ has sys.audit")
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Python 3.8+ has sys.audit",
+)
 def test_audit_is_sys_audit_since_3_8() -> None:
     assert subaudit.audit is sys.audit
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8),
-                    reason="Python 3.8+ has sys.audit")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 8),
+    reason="Python 3.8+ has sys.audit",
+)
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
     import sysaudit
     assert subaudit.audit is sysaudit.audit
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8),
-                    reason="Python 3.8+ has sys.addaudithook")
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Python 3.8+ has sys.addaudithook",
+)
 def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
     assert subaudit.addaudithook is sys.addaudithook
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8),
-                    reason="Python 3.8+ has sys.addaudithook")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 8),
+    reason="Python 3.8+ has sys.addaudithook",
+)
 def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
     import sysaudit
     assert subaudit.addaudithook is sysaudit.addaudithook
 
 
 def test_subscribed_listener_observes_event(
-        event: str, listener: Mock, hook: Hook) -> None:
+    hook: Hook, event: str, listener: Mock,
+) -> None:
     hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_called_once_with('event', 'a', 'b', 'c')
 
 
 def test_unsubscribed_listener_does_not_observe_event(
-        event: str, listener: Mock, hook: Hook) -> None:
+        hook: Hook, event: str, listener: Mock,
+) -> None:
     hook.subscribe(event, listener)
     hook.unsubscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -125,7 +135,8 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-        some_events: Iterator[str], listener: Mock, hook: Hook) -> None:
+    hook: Hook, some_events: Iterator[str], listener: Mock,
+) -> None:
     """Subscribing to one event doesn't observe other events."""
     event1, event2 = some_events
     hook.subscribe(event1, listener)
@@ -134,7 +145,8 @@ def test_subscribed_listener_does_not_observe_other_event(
 
 
 def test_listener_can_subscribe_multiple_events(
-        some_events: Iterator[str], listener: Mock, hook: Hook) -> None:
+    hook: Hook, some_events: Iterator[str], listener: Mock,
+) -> None:
     expected_calls = [call('a', 'b', 'c'), call('d', 'e')]
     event1, event2 = some_events
     hook.subscribe(event1)
@@ -151,13 +163,15 @@ def test_listener_can_subscribe_multiple_events(
 
 
 def test_cannot_unsubscribe_if_never_subscribed(
-        event: str, listener: Mock, hook: Hook) -> None:
+    hook: Hook, event: str, listener: Mock,
+) -> None:
     with pytest.raises(ValueError):
         hook.unsubscribe(event, listener)
 
 
 def test_cannot_unsubscribe_if_no_longer_subscribed(
-        event: str, listener: Mock, hook: Hook) -> None:
+    hook: Hook, event: str, listener: Mock,
+) -> None:
     hook.subscribe(event, listener)
     hook.unsubscribe(event, listener)
     with pytest.raises(ValueError):
@@ -166,7 +180,8 @@ def test_cannot_unsubscribe_if_no_longer_subscribed(
 
 @pytest.mark.parametrize('count', [0, 2, 3, 10])
 def test_listener_observes_event_as_many_times_as_subscribed(
-        count: int, event: str, listener: Mock, hook: Hook) -> None:
+    count: int, hook: Hook, event: str, listener: Mock,
+) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
     subaudit.audit(event)
@@ -175,7 +190,8 @@ def test_listener_observes_event_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_can_unsubscribe_as_many_times_as_subscribed(
-        count:int, event: str, listener: Mock, hook: Hook) -> None:
+    count:int, hook: Hook, event: str, listener: Mock,
+) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
     try:
@@ -188,7 +204,8 @@ def test_can_unsubscribe_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_cannot_unsubscribe_more_times_than_subscribed(
-        count: int, event: str, listener: Mock, hook: Hook) -> None:
+    count: int, hook: Hook, event: str, listener: Mock,
+) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
     with pytest.raises(ValueError):
@@ -197,7 +214,8 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
 
 
 def test_unsubscribe_keeps_other_listener(
-        event: str, some_listeners: Iterator[Mock], hook: Hook) -> None:
+    hook: Hook, event: str, some_listeners: Iterator[Mock],
+) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
     listener1, listener2 = some_listeners
     hook.subscribe(event, listener1)
@@ -208,7 +226,7 @@ def test_unsubscribe_keeps_other_listener(
 
 
 def test_unsubscribe_removes_last_equal_listener(
-        nonidentical_equal_listeners: list[Mock], event: str, hook: Hook,
+    hook: Hook, event: str, nonidentical_equal_listeners: list[Mock],
 ) -> None:
     for listener in nonidentical_equal_listeners:
         hook.subscribe(event, listener)
@@ -219,8 +237,8 @@ def test_unsubscribe_removes_last_equal_listener(
 
 # FIXME: Put an appropriate type annotation on the subtests function parameter.
 def test_unsubscribe_keeps_non_last_equal_listeners(
-        subtests, nonidentical_equal_listeners: list[Mock],
-        event: str, hook: Hook) -> None:
+    subtests, hook: Hook, event: str, nonidentical_equal_listeners: list[Mock],
+) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in nonidentical_equal_listeners:
         hook.subscribe(event, listener)
