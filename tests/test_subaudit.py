@@ -9,6 +9,7 @@ import uuid
 
 import pytest
 from pytest import FixtureRequest
+from pytest_subtests import SubTests
 
 import subaudit
 from subaudit import Hook
@@ -321,9 +322,11 @@ def test_unsubscribe_removes_last_equal_listener(
     nonidentical_equal_listeners[-1].assert_not_called()
 
 
-# FIXME: Put an appropriate type annotation on the subtests function parameter.
 def test_unsubscribe_keeps_non_last_equal_listeners(
-    subtests, hook: Hook, event: str, nonidentical_equal_listeners: list[Mock],
+    subtests: SubTests,
+    hook: Hook,
+    event: str,
+    nonidentical_equal_listeners: list[Mock],
 ) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in nonidentical_equal_listeners:
