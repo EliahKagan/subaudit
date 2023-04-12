@@ -50,6 +50,33 @@ def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
         yield supplier()
 
 
+def _make_hook() -> Hook:
+    """Create a hook instance."""
+    return Hook()
+
+
+@pytest.fixture(name='hook')
+def _hook() -> Hook:
+    """Hook instance."""
+    return _make_hook()
+
+
+@pytest.fixture(name='some_hooks')
+def _some_hooks() -> Iterator[Hook]:
+    """Iterator that gives as many Hook instances as needed."""
+    return _generate(_make_hook)
+
+
+@pytest.fixture(name='mocked_subscribe_unsubscribe_cls')
+def _mocked_subscribe_unsubscribe_hook_cls() -> type[Hook]:
+    """New Hook subclass with mocked out subscribe and unsubscribe methods."""
+    class MockedSubscribeUnsubscribeHook(Hook):
+        subscribe = _UnboundMethodMock()
+        unsubscribe = _UnboundMethodMock()
+
+    return MockedSubscribeUnsubscribeHook
+
+
 def _make_event() -> str:
     """Create a randomly generated fake event name."""
     return f'test-subaudit-{uuid.uuid4()}'
@@ -105,31 +132,10 @@ def _nonidentical_equal_listeners(request: FixtureRequest) -> list[Mock]:
     return [make_mock() for _ in range(request.param)]
 
 
-def _make_hook() -> Hook:
-    """Create a hook instance."""
-    return Hook()
-
-
-@pytest.fixture(name='hook')
-def _hook() -> Hook:
-    """Hook instance."""
-    return _make_hook()
-
-
-@pytest.fixture(name='some_hooks')
-def _some_hooks() -> Iterator[Hook]:
-    """Iterator that gives as many Hook instances as needed."""
-    return _generate(_make_hook)
-
-
-@pytest.fixture(name='mocked_subscribe_unsubscribe_cls')
-def _mocked_subscribe_unsubscribe_hook_cls() -> type[Hook]:
-    """New Hook subclass with mocked out subscribe and unsubscribe methods."""
-    class MockedSubscribeUnsubscribeHook(Hook):
-        subscribe = _UnboundMethodMock()
-        unsubscribe = _UnboundMethodMock()
-
-    return MockedSubscribeUnsubscribeHook
+@pytest.fixture(name='extractor')
+def _extractor() -> Mock:
+    """Mock extractor. Returns a tuple of its arguments."""
+    return Mock(side_effect=lambda *args: args)
 
 
 # FIXME: Change each skipif to xfail with a condition.
@@ -357,11 +363,20 @@ def test_listening_does_not_observe_before_enter(
     hook: Hook, event: str, listener: Mock,
 ) -> None:
     """The call to listening does not itself subscribe."""
-    context = hook.listening(event, listener)
+    context_manager = hook.listening(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
-    with context:
+    with context_manager:
         pass
     listener.assert_not_called()
+
+
+def test_listening_does_not_call_subscribe_before_enter(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
+) -> None:
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+    hook.listening(event, listener)
+    assert subscribe.assert_not_called()
 
 
 def test_listening_observes_between_enter_and_exit(
@@ -373,6 +388,16 @@ def test_listening_observes_between_enter_and_exit(
     listener.assert_called_once_with('a', 'b', 'c')
 
 
+def test_listening_enter_calls_subscribe(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
+) -> None:
+    """An overridden subscribe method will be used by listening."""
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+    with hook.listening(event, listener):
+        assert subscribe.assert_called_once_with(hook, event, listener)
+
+
 def test_listening_does_not_observe_after_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
 ) -> None:
@@ -382,6 +407,23 @@ def test_listening_does_not_observe_after_exit(
             maybe_raise()
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_not_called()
+
+
+def test_listening_exit_calls_unsubscribe(
+    maybe_raise: Callable[[], None],
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    listener: Mock,
+) -> None:
+    """An overridden unsubscribe method will be called by listening."""
+    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with contextlib.suppress(_FakeError):
+        with hook.listening(event, listener):
+            maybe_raise()
+
+    assert unsubscribe.assert_called_once_with(hook, event, listener)
 
 
 def test_listening_observes_only_between_enter_and_exit(
@@ -403,33 +445,6 @@ def test_listening_observes_only_between_enter_and_exit(
     assert listener.mock_calls == [call('d'), call('e', 'f')]
 
 
-def test_listening_enter_calls_subscribe(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
-) -> None:
-    """An overridden subscribe method will be used by listening."""
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-    with hook.listening(event, listener):
-        assert subscribe.assert_called_once_with(hook, event, listener)
-
-
-def test_listening_exit_calls_unsubscribe(
-    maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
-    event: str,
-    listener: Mock,
-) -> None:
-    """An overridden unsubscribe method will be called by listening."""
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
-    with contextlib.suppress(_FakeError):
-        with hook.listening(event, listener):
-            maybe_raise()
-
-    assert unsubscribe.assert_called_once_with(hook, event, listener)
-
-
 def test_listening_enter_returns_none(
     hook: Hook, event: str, listener: Mock,
 ) -> None:
@@ -439,7 +454,139 @@ def test_listening_enter_returns_none(
     assert context is None
 
 
-# FIXME: Test the Hook.extracting context manager function.
+def test_extracting_does_not_observe_before_enter(
+    hook: Hook, event: str, extractor: Mock,
+) -> None:
+    context_manager = hook.extracting(event, extractor)
+    subaudit.audit(event, 'a', 'b', 'c')
+    with context_manager:
+        pass
+    extractor.assert_not_called()
+
+
+def test_extracting_does_not_extract_before_enter(
+    hook: Hook, event: str, extractor: Mock,
+) -> None:
+    context_manager = hook.extracting(event, extractor)
+    subaudit.audit(event, 'a', 'b', 'c')
+    with context_manager as extracts:
+        pass
+    assert extracts == []
+
+
+def test_extracting_does_not_call_subscribe_before_enter(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+) -> None:
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+    hook.extracting(event, extractor)
+    assert subscribe.assert_not_called()
+
+
+def test_extracting_observes_between_enter_and_exit(
+    hook: Hook, event: str, extractor: Mock,
+) -> None:
+    with hook.extracting(event, extractor):
+        subaudit.audit(event, 'a', 'b', 'c')
+    extractor.assert_called_once_with('a', 'b', 'c')
+
+
+def test_extracting_extracts_between_enter_and_exit(
+    hook: Hook, event: str, extractor: Mock,
+) -> None:
+    with hook.extracting(event, extractor) as extracts:
+        subaudit.audit(event, 'a', 'b', 'c')
+    assert extracts == [('a', 'b', 'c')]
+
+
+# FIXME: Either here or in another test, verify that calling the subscribed
+#        listener with fake args has the effect of appending a fake extract to
+#        the list of extracts.
+def test_extracting_enter_calls_subscribe(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+) -> None:
+    subscribe: Mock = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+    with hook.extracting(event, extractor):
+        assert subscribe.assert_called_once()  # FIXME: Assert hook and event.
+
+
+def test_extracting_does_not_observe_after_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+) -> None:
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor):
+            maybe_raise()
+    subaudit.audit(event, 'a', 'b', 'c')
+    extractor.assert_not_called()
+
+
+def test_extracting_does_not_extract_after_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+) -> None:
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor) as extracts:
+            maybe_raise()
+    subaudit.audit(event, 'a', 'b', 'c')
+    assert extracts == []
+
+
+# FIXME: Either here or in another test, verify that calling the unsubscribed
+#        listener with fake args has the effect of appending a fake extract to
+#        the list of extracts.
+def test_extracting_exit_calls_unsubscribe(
+    maybe_raise: Callable[[], None],
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: Mock,
+) -> None:
+    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor):
+            maybe_raise()
+
+    assert unsubscribe.assert_called_once()  # FIXME: Assert hook and event.
+
+
+def test_extracting_observes_only_between_enter_and_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+) -> None:
+    subaudit.audit(event, 'a')
+    subaudit.audit(event, 'b', 'c')
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor):
+            subaudit.audit('d')
+            subaudit.audit('e', 'f')
+            maybe_raise()
+
+    subaudit.audit(event, 'g')
+    subaudit.audit(event, 'h', 'i')
+
+    assert extractor.mock_calls == [call('d'), call('e', 'f')]
+
+
+def test_extracting_extracts_only_between_enter_and_exit(
+    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+) -> None:
+    subaudit.audit(event, 'a')
+    subaudit.audit(event, 'b', 'c')
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor) as extracts:
+            subaudit.audit('d')
+            subaudit.audit('e', 'f')
+            maybe_raise()
+
+    subaudit.audit(event, 'g')
+    subaudit.audit(event, 'h', 'i')
+
+    assert extracts == [('d',), ('e', 'f')]
+
+
+# FIXME: Test that the behavior of the extractor function is really used.
 
 
 # FIXME: Test that a listener cannot be unsubscribed from a different Hook.
