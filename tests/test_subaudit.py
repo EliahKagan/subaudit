@@ -1,6 +1,6 @@
 """Tests for the subaudit module."""
 
-import itertools
+import functools
 import sys
 from typing import Callable, Iterator, TypeVar
 from unittest.mock import Mock, call
@@ -156,10 +156,59 @@ def test_listener_can_subscribe_multiple_events(
     assert listener.mock_calls == expected_calls
 
 
-# FIXME: Test that listeners are called in the order they are subscribed.
+def test_listeners_called_in_subscribe_order(
+    hook: Hook, event: str, some_listeners: Iterator[Mock],
+) -> None:
+    ordering = []
+    listener1, listener2, listener3 = some_listeners
+    listener1.side_effect = functools.partial(ordering.append, 1)
+    listener2.side_effect = functools.partial(ordering.append, 2)
+    listener3.side_effect = functools.partial(ordering.append, 3)
+
+    hook.subscribe(event, listener1)
+    hook.subscribe(event, listener2)
+    hook.subscribe(event, listener3)
+    subaudit.audit(event)
+
+    assert ordering == [1, 2, 3]
 
 
-# FIXME: Test that the remaining listeners are called after some unsubscribe.
+def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
+    hook: Hook, event: str, some_listeners: Iterator[Mock],
+) -> None:
+    ordering = []
+    listener1, listener2, listener3, listener4 = some_listeners
+    listener1.side_effect = functools.partial(ordering.append, 1)
+    listener2.side_effect = functools.partial(ordering.append, 2)
+    listener3.side_effect = functools.partial(ordering.append, 3)
+    listener3.side_effect = functools.partial(ordering.append, 4)
+
+    hook.subscribe(event, listener1)
+    hook.subscribe(event, listener2)
+    hook.subscribe(event, listener3)
+    hook.subscribe(event, listener4)
+    hook.unsubscribe(event, listener1)
+    hook.unsubscribe(event, listener3)
+    subaudit.audit(event)
+
+    assert ordering == [2, 4]
+
+
+def test_listeners_called_in_new_order_after_resubscribe(
+    hook: Hook, event: str, some_listeners: Iterator[Mock],
+) -> None:
+    ordering = []
+    listener1, listener2 = some_listeners
+    listener1.side_effect = functools.partial(ordering.append, 1)
+    listener2.side_effect = functools.partial(ordering.append, 2)
+
+    hook.subscribe(event, listener1)
+    hook.subscribe(event, listener2)
+    hook.unsubscribe(event, listener1)
+    hook.subscribe(event, listener1)
+    subaudit.audit(event)
+
+    assert ordering == [2, 1]
 
 
 def test_cannot_unsubscribe_if_never_subscribed(
@@ -248,9 +297,6 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
     for index, listener in enumerate(nonidentical_equal_listeners[:-1]):
         with subtests.test(listener_index=index):
             listener.assert_called_once_with('a', 'b', 'c')
-
-
-# FIXME: Test subscribe and unsubscribe with multiple (unequal) listeners.
 
 
 # FIXME: Test the context managers from Hook.listening and Hook.extracting.
