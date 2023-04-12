@@ -8,6 +8,7 @@ from unittest.mock import Mock, call
 import uuid
 
 import pytest
+from pytest import FixtureRequest
 
 import subaudit
 from subaudit import Hook
@@ -27,9 +28,8 @@ class _FakeError(Exception):
     """Fake exception for testing."""
 
 
-# FIXME: Put an appropriate type annotation on the request function parameter.
 @pytest.fixture(name='maybe_raise', params=[False, True])
-def _maybe_raise(request) -> Callable[[], None]:
+def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     """
     A function that, when called, either raises _FakeError or does nothing.
 
@@ -83,9 +83,8 @@ def _some_listeners() -> Iterator[Mock]:
     return _generate(_make_listener)
 
 
-# FIXME: Put an appropriate type annotation on the request function parameter.
 @pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
-def _nonidentical_equal_listeners(request) -> list[Mock]:
+def _nonidentical_equal_listeners(request: FixtureRequest) -> list[Mock]:
     """List of listeners that are different objects but all equal."""
     # FIXME: Make them equal just to each other, not to all objects.
     return [Mock(__eq__=Mock(return_value=True)) for _ in range(request.param)]
