@@ -353,7 +353,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
             listener.assert_called_once_with('a', 'b', 'c')
 
 
-def test_listening_listener_does_not_observe_before_enter(
+def test_listening_does_not_observe_before_enter(
     hook: Hook, event: str, listener: Mock,
 ) -> None:
     """The call to listening does not itself subscribe."""
@@ -364,7 +364,7 @@ def test_listening_listener_does_not_observe_before_enter(
     listener.assert_not_called()
 
 
-def test_listening_listener_observes_between_enter_and_exit(
+def test_listening_observes_between_enter_and_exit(
     hook: Hook, event: str, listener: Mock,
 ) -> None:
     """In the block of a with statement, the listener is subscribed."""
@@ -373,7 +373,7 @@ def test_listening_listener_observes_between_enter_and_exit(
     listener.assert_called_once_with('a', 'b', 'c')
 
 
-def test_listening_listener_does_not_observe_after_exit(
+def test_listening_does_not_observe_after_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
 ) -> None:
     """After exiting the with statement, the listener is not subscribed."""
@@ -384,7 +384,7 @@ def test_listening_listener_does_not_observe_after_exit(
     listener.assert_not_called()
 
 
-def test_listening_listener_observes_only_between_enter_and_exit(
+def test_listening_observes_only_between_enter_and_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
 ) -> None:
     """The listening context manager works in (simple yet) nontrivial usage."""
