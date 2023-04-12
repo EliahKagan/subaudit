@@ -15,6 +15,14 @@ from subaudit import Hook
 _T = TypeVar('_T')
 
 
+class _UnboundMethodMock(Mock):
+    """A mock that is also a descriptor, to behave like a function."""
+
+    def __get__(self, instance, owner=None):
+        """Bind the instance, if any, to produce a "bound method"."""
+        return self if instance is None else functools.partial(self, instance)
+
+
 class _FakeError(Exception):
     """Fake exception for testing."""
 
@@ -104,10 +112,8 @@ def _some_hooks() -> Iterator[Hook]:
 def _mocked_subscribe_unsubscribe_hook_cls() -> type[Hook]:
     """New Hook subclass with mocked out subscribe and unsubscribe methods."""
     class MockedSubscribeUnsubscribeHook(Hook):
-        # FIXME: This doesn't work because Mock objects are not functions and
-        #        don't have the descriptor logic to become bound methods.
-        subscribe = Mock()
-        unsubscribe = Mock()
+        subscribe = _UnboundMethodMock()
+        unsubscribe = _UnboundMethodMock()
 
     return MockedSubscribeUnsubscribeHook
 
@@ -381,7 +387,6 @@ def test_listening_listener_observes_only_between_enter_and_exit(
     assert listener.mock_calls == [call('d'), call('e', 'f')]
 
 
-# FIXME: Write this test.
 def test_listening_enter_calls_subscribe(
     mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
 ) -> None:
@@ -389,11 +394,9 @@ def test_listening_enter_calls_subscribe(
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
     with hook.listening(event, listener):
-        # FIXME: Fix mocking so hook is passed to the "bound method".
         assert subscribe.assert_called_once_with(hook, event, listener)
 
 
-# FIXME: Write this test.
 def test_listening_exit_calls_unsubscribe(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
@@ -408,7 +411,6 @@ def test_listening_exit_calls_unsubscribe(
         with hook.listening(event, listener):
             maybe_raise()
 
-    # FIXME: Fix mocking so hook is passed to the "bound method".
     assert unsubscribe.assert_called_once_with(hook, event, listener)
 
 
