@@ -3,10 +3,11 @@
 import contextlib
 import functools
 import sys
-from typing import Callable, Iterator, TypeVar
+from typing import Any, Callable, Iterator, TypeVar
 from unittest.mock import Mock, call
 import uuid
 
+import attrs
 import pytest
 from pytest import FixtureRequest
 from pytest_subtests import SubTests
@@ -132,10 +133,23 @@ def _nonidentical_equal_listeners(request: FixtureRequest) -> list[Mock]:
     return [make_mock() for _ in range(request.param)]
 
 
+@attrs.frozen
+class _Extract:
+    """
+    Auditing event arguments extracted by a custom extractor.
+
+    The point of this type is to be separate from anything in, or used by, the
+    code under test, so no excessively specific behavior wrongly passes tests
+    of more general behavior.
+    """
+    args: tuple[Any, ...]
+    """Event arguments extracted in a test."""
+
+
 @pytest.fixture(name='extractor')
 def _extractor() -> Mock:
     """Mock extractor. Returns a tuple of its arguments."""
-    return Mock(side_effect=lambda *args: args)
+    return Mock(side_effect=lambda *args: _Extract(args))
 
 
 # FIXME: Change each skipif to xfail with a condition.
@@ -496,7 +510,7 @@ def test_extracting_extracts_between_enter_and_exit(
 ) -> None:
     with hook.extracting(event, extractor) as extracts:
         subaudit.audit(event, 'a', 'b', 'c')
-    assert extracts == [('a', 'b', 'c')]
+    assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
 
 # FIXME: Either here or in another test, verify that calling the subscribed
@@ -583,10 +597,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
     subaudit.audit(event, 'g')
     subaudit.audit(event, 'h', 'i')
 
-    assert extracts == [('d',), ('e', 'f')]
-
-
-# FIXME: Test that the behavior of the extractor function is really used.
+    assert extracts == [_Extract(args=('d',)), _Extract(args=('e', 'f'))]
 
 
 # FIXME: Test that a listener cannot be unsubscribed from a different Hook.
