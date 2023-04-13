@@ -753,5 +753,8 @@ def test_extracting_subscribes_and_unsubscribes_same(
 # FIXME: Retest some common cases with audit events from the standard library.
 
 
+# FIXME: Test skip_if_unavailable.
+
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, *sys.argv[1:]]))
