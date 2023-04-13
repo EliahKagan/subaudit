@@ -14,6 +14,7 @@ __all__ = [
 ]  # FIXME: Delete the above comments. Move any key info to items' docstrings.
 
 import contextlib
+import sys
 from typing import (
     Any,
     Callable,
@@ -27,10 +28,10 @@ from typing import (
     TypeVar,
 )
 
-try:
-    from sys import audit, addaudithook
-except ImportError:
+if sys.version_info < (3, 8):
     from sysaudit import audit, addaudithook
+else:
+    from sys import audit, addaudithook
 
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
