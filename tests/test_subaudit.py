@@ -67,6 +67,12 @@ class _MockListener(Protocol):
     @property
     def mock_calls(self) -> _CallList: ...
 
+    @property
+    def side_effect(self) -> Optional[Callable[..., Any]]: ...
+
+    @side_effect.setter
+    def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
+
 
 # FIXME: Write a _MockExtractor protocol and use it, too.
 
