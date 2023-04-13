@@ -3,7 +3,7 @@
 import contextlib
 import functools
 import sys
-from typing import Any, Callable, Iterator, TypeVar
+from typing import Any, Callable, Iterator, List, Tuple, TypeVar
 from unittest.mock import Mock, call
 import uuid
 
@@ -117,7 +117,7 @@ def _some_listeners() -> Iterator[Mock]:
 
 
 @pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
-def _nonidentical_equal_listeners(request: FixtureRequest) -> list[Mock]:
+def _nonidentical_equal_listeners(request: FixtureRequest) -> List[Mock]:
     """List of listeners that are different objects but all equal."""
     group_key = object()
 
@@ -146,7 +146,7 @@ class _Extract:
     code under test, so no excessively specific behavior wrongly passes tests
     of more general behavior.
     """
-    args: tuple[Any, ...]
+    args: Tuple[Any, ...]
     """Event arguments extracted in a test."""
 
 
@@ -351,7 +351,7 @@ def test_unsubscribe_keeps_other_listener(
 
 
 def test_unsubscribe_removes_last_equal_listener(
-    hook: Hook, event: str, nonidentical_equal_listeners: list[Mock],
+    hook: Hook, event: str, nonidentical_equal_listeners: List[Mock],
 ) -> None:
     for listener in nonidentical_equal_listeners:
         hook.subscribe(event, listener)
@@ -364,7 +364,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
     subtests: SubTests,
     hook: Hook,
     event: str,
-    nonidentical_equal_listeners: list[Mock],
+    nonidentical_equal_listeners: List[Mock],
 ) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in nonidentical_equal_listeners:
