@@ -3,7 +3,7 @@
 import contextlib
 import functools
 import sys
-from typing import Any, Callable, Iterator, List, Tuple, TypeVar
+from typing import Any, Callable, Iterator, List, Optional, Tuple, TypeVar
 from unittest.mock import Mock, call
 import uuid
 
@@ -627,9 +627,13 @@ def test_extracting_does_not_observe_after_exit(
 def test_extracting_does_not_extract_after_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
 ) -> None:
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]].
+    extracts: Optional[List[object]] = None
+
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor) as extracts:
             maybe_raise()
+
     subaudit.audit(event, 'a', 'b', 'c')
     assert extracts == []
 
@@ -683,6 +687,8 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 ) -> None:
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
     hook = mocked_subscribe_unsubscribe_cls()
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]]:
+    extracts: Optional[List[object]] = None
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor) as extracts:
@@ -715,6 +721,9 @@ def test_extracting_observes_only_between_enter_and_exit(
 def test_extracting_extracts_only_between_enter_and_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
 ) -> None:
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]].
+    extracts: Optional[List[object]] = None
+
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
