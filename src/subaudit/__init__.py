@@ -36,18 +36,25 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
-_table: Optional[MutableMapping[str, Tuple[Callable[..., None], ...]]] = None
+_Table = MutableMapping[str, Tuple[Callable[..., None], ...]]
+"""Type of the table that maps each event to its listeners."""
+
+_table: Optional[_Table] = None
 """Table mapping each event to its listeners, or None if not yet needed."""
 
 
 def _hook(event: str, args: tuple[Any, ...]) -> None:
     """Single audit hook used for all events and handlers."""
+    # We have ensured that _table is a table before _hook can ever be called.
+    # FIXME: Still, use separate _table and _hook_installed variables instead.
+    table: _Table = _table  # type: ignore[assignment]
+
     try:
         # Subscripting a dict with str keys should be sufficiently protected by
         # the GIL in CPython. This doesn't protect the table rows. But those
         # are tuples that we always replace, rather than lists that we mutate,
         # so we should observe consistent state.
-        listeners = _table[event]
+        listeners = table[event]
     except KeyError:
         return
 
