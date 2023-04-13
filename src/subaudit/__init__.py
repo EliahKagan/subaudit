@@ -121,6 +121,9 @@ def _extracting(
 #        independent. It is the very minimum needed to get this class to a
 #        state that may be worth using, and to satisfy the tests' requirements.
 #
+# FIXME: Rework "handles writing a single reference as an atomic operation",
+#        which disregards the other issue of the dictionary lookup.
+#
 # FIXME: Move as much of this class's docstring as is reasonable to the module
 #        docstring, but wait to do so until the SyncHook subclass is written.
 #
