@@ -185,3 +185,9 @@ class Hook:
     ) -> ContextManager[List[_R]]:
         """Context manager to provide a list of custom-extracted event data."""
         return _extracting(event, extractor)
+
+
+# FIXME: Add SyncHook and the top-level stuff for the global SyncHook instance.
+
+
+# FIXME: Add skip_if_unavailable.

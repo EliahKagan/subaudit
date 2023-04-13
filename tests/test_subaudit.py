@@ -753,6 +753,11 @@ def test_extracting_subscribes_and_unsubscribes_same(
 # FIXME: Retest some common cases with audit events from the standard library.
 
 
+# FIXME: Test the SyncHook class as well as the top-level stuff for the global
+#        SyncHook instance. *Most* of this should be achieved by parametrizing
+#        test fixtures that are already defined in this module.
+
+
 # FIXME: Test skip_if_unavailable.
 
 
