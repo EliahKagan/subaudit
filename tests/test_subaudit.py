@@ -373,6 +373,24 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
             listener.assert_called_once_with('a', 'b', 'c')
 
 
+def test_cannot_unsubscribe_listener_from_other_hook(
+    some_hooks: Iterator[Hook], event: str, listener: Mock,
+) -> None:
+    hook1, hook2 = some_hooks
+    hook1.subscribe(event, listener)
+    with pytest.raises(ValueError):
+        hook2.unsubscribe(event, listener)
+
+
+# FIXME: Test that a Hook's first subscription adds an audit hook.
+
+
+# FIXME: Test that a Hook's subsequent subscriptions don't add audit hooks.
+
+
+# FIXME: Test that a second Hook's first subscription adds an audit hook.
+
+
 def test_listening_does_not_observe_before_enter(
     hook: Hook, event: str, listener: Mock,
 ) -> None:
@@ -680,18 +698,6 @@ def test_extracting_subscribes_and_unsubscribes_same(
             maybe_raise()
 
     assert subscribe.mock_calls == unsubscribe.mock_calls
-
-
-# FIXME: Test that a listener cannot be unsubscribed from a different Hook.
-
-
-# FIXME: Test that a Hook's first subscription adds an audit hook.
-
-
-# FIXME: Test that a Hook's subsequent subscriptions don't add audit hooks.
-
-
-# FIXME: Test that a second Hook's first subscription adds an audit hook.
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
