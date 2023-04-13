@@ -107,3 +107,45 @@ def _extracting(event: str,
     extracts = []
     with _listening(event, lambda *args: extracts.append(extractor(*args))):
         yield extracts
+
+
+# FIXME: Move as much of this class's docstring as is reasonable to the module
+#        docstring, but wait to do so until the SyncHook subclass is written.
+#
+# FIXME: Note, somewhere, that a future version of the library *might* scale up
+#        to an asymptotically faster data structure for rows containing large
+#        numbers (thousands? more?) of listeners.
+#
+class Hook:
+    """
+    Audit hook wrapper that managers event-specific subscribers.
+
+    Listeners subscribe to specific auditing events and may unsubscribe from
+    them. Only one audit hook is actually installed (per Hook instance). The
+    actual audit hook for a Hook instance is installed the first time a
+    listener subscribes to the Hook instance, so if the Hook is never needed,
+    no audit hook is installed. The suggested approach is to use only a small
+    number of Hook instances, often just one, even even if many different
+    listeners will be subscribed and unsubscribed for many (or a few) different
+    events.
+
+    The subscribe and unsubscribe methods are NOT thread-safe. However, so long
+    as the caller ensures no data race happens between calls to either or both
+    of those methods, the state of the Hook should not be corrupted... IF the
+    Python implementation is CPython or otherwise supports writing a single
+    reference as an atomic operation. This is to say: at least on CPython,
+    segfaults or very strange behavior shouldn't happen due to an event firing,
+    even if a listener is subscribing or unsubscribing at the same time.
+
+    Hook objects is not optimized for the case of a very large number of
+    listeners being subscribed to the same event at the same time. This is
+    because they store each event's listeners in an immutable sequence, which
+    is rebuilt each time a listener is subscribed or unsubscribed. (This is
+    part of how consistent state is maintained at all time, so the installed
+    audit hook doesn't need to synchronize with subscribe and unsubscribe.)
+    Subscribing N listeners to the same event on the same Hook, without
+    unsubscribing any, takes O(N**2) time. If you need to have more than a
+    couple hundred listeners on the same event at the same time, this may not
+    be the right tool for the job.
+    """
+    # FIXME: Implement this.
