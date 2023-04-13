@@ -36,7 +36,7 @@ _T = TypeVar('_T')
 
 
 class _MockListener(Protocol):
-    """Protocol for a listener that support some of the Mock interface."""
+    """Protocol for a listener that supports some of the Mock interface."""
 
     __slots__ = ()
 
@@ -148,19 +148,19 @@ def _some_events() -> Iterator[str]:
     return _generate(_make_event)
 
 
-def _make_listener() -> Mock:
+def _make_listener() -> _MockListener:
     """Create a mock listener."""
     return Mock()
 
 
 @pytest.fixture(name='listener')
-def _listener() -> Mock:
+def _listener() -> _MockListener:
     """Mock listener."""
     return _make_listener()
 
 
 @pytest.fixture(name='some_listeners')
-def _some_listeners() -> Iterator[Mock]:
+def _some_listeners() -> Iterator[_MockListener]:
     """Iterator that gives as many mock listeners as needed."""
     return _generate(_make_listener)
 
@@ -241,7 +241,7 @@ def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
 
 
 def test_subscribed_listener_observes_event(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -249,7 +249,7 @@ def test_subscribed_listener_observes_event(
 
 
 def test_unsubscribed_listener_does_not_observe_event(
-        hook: Hook, event: str, listener: Mock,
+        hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     hook.subscribe(event, listener)
     hook.unsubscribe(event, listener)
@@ -258,7 +258,7 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-    hook: Hook, some_events: Iterator[str], listener: Mock,
+    hook: Hook, some_events: Iterator[str], listener: _MockListener,
 ) -> None:
     """Subscribing to one event doesn't observe other events."""
     event1, event2 = some_events
@@ -268,7 +268,7 @@ def test_subscribed_listener_does_not_observe_other_event(
 
 
 def test_listener_can_subscribe_multiple_events(
-    hook: Hook, some_events: Iterator[str], listener: Mock,
+    hook: Hook, some_events: Iterator[str], listener: _MockListener,
 ) -> None:
     event1, event2 = some_events
     hook.subscribe(event1, listener)
@@ -279,7 +279,7 @@ def test_listener_can_subscribe_multiple_events(
 
 
 def test_listeners_called_in_subscribe_order(
-    hook: Hook, event: str, some_listeners: Iterator[Mock],
+    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3 = some_listeners
@@ -296,7 +296,7 @@ def test_listeners_called_in_subscribe_order(
 
 
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
-    hook: Hook, event: str, some_listeners: Iterator[Mock],
+    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3, listener4 = some_listeners
@@ -317,7 +317,7 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
 
 
 def test_listeners_called_in_new_order_after_resubscribe(
-    hook: Hook, event: str, some_listeners: Iterator[Mock],
+    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2 = some_listeners
@@ -334,14 +334,14 @@ def test_listeners_called_in_new_order_after_resubscribe(
 
 
 def test_cannot_unsubscribe_if_never_subscribed(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     with pytest.raises(ValueError):
         hook.unsubscribe(event, listener)
 
 
 def test_cannot_unsubscribe_if_no_longer_subscribed(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     hook.subscribe(event, listener)
     hook.unsubscribe(event, listener)
@@ -351,7 +351,7 @@ def test_cannot_unsubscribe_if_no_longer_subscribed(
 
 @pytest.mark.parametrize('count', [0, 2, 3, 10])
 def test_listener_observes_event_as_many_times_as_subscribed(
-    count: int, hook: Hook, event: str, listener: Mock,
+    count: int, hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
@@ -361,7 +361,7 @@ def test_listener_observes_event_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_can_unsubscribe_as_many_times_as_subscribed(
-    count: int, hook: Hook, event: str, listener: Mock,
+    count: int, hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
@@ -375,7 +375,7 @@ def test_can_unsubscribe_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_cannot_unsubscribe_more_times_than_subscribed(
-    count: int, hook: Hook, event: str, listener: Mock,
+    count: int, hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         hook.subscribe(event, listener)
@@ -385,7 +385,7 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
 
 
 def test_unsubscribe_keeps_other_listener(
-    hook: Hook, event: str, some_listeners: Iterator[Mock],
+    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
 ) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
     listener1, listener2 = some_listeners
@@ -424,7 +424,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
 
 
 def test_cannot_unsubscribe_listener_from_other_hook(
-    some_hooks: Iterator[Hook], event: str, listener: Mock,
+    some_hooks: Iterator[Hook], event: str, listener: _MockListener,
 ) -> None:
     hook1, hook2 = some_hooks
     hook1.subscribe(event, listener)
@@ -442,7 +442,7 @@ def test_instance_construction_does_not_add_audit_hook(
 
 
 def test_instance_adds_audit_hook_on_first_subscribe(
-    mocker: MockerFixture, hook: Hook, event: str, listener: Mock,
+    mocker: MockerFixture, hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     mock = mocker.patch('subaudit.addaudithook')
     hook.subscribe(event, listener)
@@ -453,7 +453,7 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
     mocker: MockerFixture,
     hook: Hook,
     some_events: Iterator[str],
-    some_listeners: Iterator[Mock],
+    some_listeners: Iterator[_MockListener],
 ) -> None:
     event1, event2 = some_events
     listener1, listener2 = some_listeners
@@ -467,7 +467,7 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture,
     some_hooks: Iterator[Hook],
     some_events: Iterator[str],
-    some_listeners: Iterator[Mock],
+    some_listeners: Iterator[_MockListener],
 ) -> None:
     """Different Hook objects do not share the same audit hook."""
     hook1, hook2 = some_hooks
@@ -480,7 +480,7 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
 
 
 def test_listening_does_not_observe_before_enter(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     """The call to listening does not itself subscribe."""
     context_manager = hook.listening(event, listener)
@@ -491,7 +491,9 @@ def test_listening_does_not_observe_before_enter(
 
 
 def test_listening_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    listener: _MockListener,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -500,7 +502,7 @@ def test_listening_does_not_call_subscribe_before_enter(
 
 
 def test_listening_observes_between_enter_and_exit(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     """In the block of a with statement, the listener is subscribed."""
     with hook.listening(event, listener):
@@ -509,7 +511,9 @@ def test_listening_observes_between_enter_and_exit(
 
 
 def test_listening_enter_calls_subscribe(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, listener: Mock,
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    listener: _MockListener,
 ) -> None:
     """An overridden subscribe method will be used by listening."""
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
@@ -519,7 +523,10 @@ def test_listening_enter_calls_subscribe(
 
 
 def test_listening_does_not_observe_after_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    listener: _MockListener,
 ) -> None:
     """After exiting the with statement, the listener is not subscribed."""
     with contextlib.suppress(_FakeError):
@@ -534,7 +541,7 @@ def test_listening_exit_calls_unsubscribe(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    listener: Mock,
+    listener: _MockListener,
 ) -> None:
     """An overridden unsubscribe method will be called by listening."""
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
@@ -551,7 +558,10 @@ def test_listening_exit_calls_unsubscribe(
 
 
 def test_listening_observes_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, listener: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    listener: _MockListener,
 ) -> None:
     """The listening context manager works in (simple yet) nontrivial usage."""
     subaudit.audit(event, 'a')
@@ -570,7 +580,7 @@ def test_listening_observes_only_between_enter_and_exit(
 
 
 def test_listening_enter_returns_none(
-    hook: Hook, event: str, listener: Mock,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     """The listening context manager isn't meant to be used with "as"."""
     with hook.listening(event, listener) as context:
