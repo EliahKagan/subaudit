@@ -130,12 +130,12 @@ def _extracting(
 #
 class Hook:
     """
-    Audit hook wrapper. Subscribe and unsubscribe listeners of specific events.
+    Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
 
     Listeners subscribe to specific auditing events and may unsubscribe from
     them. Only one audit hook is actually installed (per Hook instance). The
     actual audit hook for a Hook instance is installed the first time a
-    listener subscribes to the Hook instance, so if the Hook is never needed,
+    listener subscribes via the Hook instance, so if the Hook is never needed,
     no audit hook is installed. The suggested approach is to use only a small
     number of Hook instances, often just one, even if many different listeners
     will be subscribed and unsubscribed for many (or few) different events.
@@ -148,16 +148,16 @@ class Hook:
     segfaults or very strange behavior shouldn't happen due to an event firing,
     even if a listener is subscribing or unsubscribing at the same time.
 
-    Hook objects are not optimized for the case of a large number of listeners
-    being subscribed to the same event at the same time. This is because they
-    store each event's listeners in an immutable sequence, rebuilt each time a
-    listener is subscribed or unsubscribed. (This is part of how consistent
-    state is maintained at all times, so the installed audit hook doesn't need
-    to synchronize with subscribe and unsubscribe.) Subscribing N listeners to
-    the same event on the same Hook, without unsubscribing any, takes O(N**2)
-    time. If you need to have more than a couple hundred listeners on the same
-    event at the same time, while also subscribing and unsubscribing listeners
-    to that same event frequently, this may not be the right tool for the job.
+    Hook objects are not optimized for the case of an event having a large
+    number of listeners. This is because a Hook stores store each event's
+    listeners in an immutable sequence, rebuilt each time a listener is
+    subscribed or unsubscribed. (This is part of how consistent state is
+    maintained at all times, so the installed audit hook doesn't need to
+    synchronize with subscribe and unsubscribe.) Subscribing N listeners to the
+    same event, without unsubscribing any, takes O(N**2) time. If you need to
+    have more than a couple hundred listeners on the same event at the same
+    time, especially if you are also frequently subscribing and unsubscribing
+    listeners to that same event, this may not be the right tool for the job.
     """
 
     __slots__ = ()
