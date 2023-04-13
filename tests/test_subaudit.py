@@ -3,8 +3,18 @@
 import contextlib
 import functools
 import sys
-from typing import Any, Callable, Iterator, List, Optional, Tuple, TypeVar
-from unittest.mock import Mock, call
+from typing import (
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
+# TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
+from unittest.mock import _Call, _CallList, Mock, call
 import uuid
 
 import attrs
@@ -12,14 +22,53 @@ import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
+from typing_extensions import Protocol
 
 import subaudit
 from subaudit import Hook
 
 _T = TypeVar('_T')
 
+# TODO: Maybe split this into multiple modules.
+
 # TODO: Maybe use typing.NewType to introduce Listener and Extractor
 #       "subclasses" of Mock, and possibly others.
+
+
+class _MockListener(Protocol):
+    """Protocol for a listener that support some of the Mock interface."""
+
+    __slots__ = ()
+
+    def __call__(self, *__args: Any) -> None: ...
+
+    def assert_called(self) -> None: ...
+
+    def assert_called_once(self) -> None: ...
+
+    def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_has_calls(
+        self, calls: Sequence[_Call], any_order: bool = False,
+    ) -> None: ...
+
+    def assert_not_called(self) -> None: ...
+
+    @property
+    def called(self) -> bool: ...
+
+    @property
+    def call_count(self) -> int: ...
+
+    @property
+    def mock_calls(self) -> _CallList: ...
+
+
+# FIXME: Write a _MockExtractor protocol and use it, too.
 
 
 class _UnboundMethodMock(Mock):
