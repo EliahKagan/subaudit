@@ -382,6 +382,9 @@ def test_cannot_unsubscribe_listener_from_other_hook(
         hook2.unsubscribe(event, listener)
 
 
+# FIXME: Test that constructing a Hook does not add an audit hook.
+
+
 # FIXME: Test that a Hook's first subscription adds an audit hook.
 
 
