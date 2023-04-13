@@ -416,7 +416,7 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
 
 def test_second_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture,
-    some_hooks: Hook,
+    some_hooks: Iterator[Hook],
     some_events: Iterator[str],
     some_listeners: Iterator[Mock],
 ) -> None:
