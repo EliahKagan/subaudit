@@ -39,7 +39,7 @@ def _subscribe(event, listener):
 
     if _table is None:
         _table = {}
-        sys.addaudithook(_hook)
+        addaudithook(_hook)
 
     old_listeners = _table.get(event, ())
     _table[event] = (*old_listeners, listener)
