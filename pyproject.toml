@@ -5,6 +5,16 @@ description = "Subscribe and unsubscribe for specific audit events"
 authors = ["Eliah Kagan <degeneracypressure@gmail.com>"]
 license = "0BSD"
 readme = "README.md"
+homepage = "https://github.com/EliahKagan/subaudit"
+repository = "https://github.com/EliahKagan/subaudit"
+keywords = ["audit", "auditing", "events", "subscribe", "unsubscribe"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
