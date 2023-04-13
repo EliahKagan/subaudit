@@ -172,14 +172,16 @@ def _some_listeners() -> Iterator[_MockListener]:
 
 
 @pytest.fixture(name='nonidentical_equal_listeners', params=[2, 3, 5])
-def _nonidentical_equal_listeners(request: FixtureRequest) -> List[Mock]:
+def _nonidentical_equal_listeners(
+    request: FixtureRequest,
+) -> List[_MockListener]:
     """List of listeners that are different objects but all equal."""
     group_key = object()
 
     def in_group(other: object) -> bool:
         return getattr(other, 'group_key', None) is group_key
 
-    def make_mock() -> Mock:
+    def make_mock() -> _MockListener:
         return Mock(
             __eq__=Mock(side_effect=in_group),
             __hash__=Mock(return_value=hash(group_key)),
@@ -403,7 +405,7 @@ def test_unsubscribe_keeps_other_listener(
 
 
 def test_unsubscribe_removes_last_equal_listener(
-    hook: Hook, event: str, nonidentical_equal_listeners: List[Mock],
+    hook: Hook, event: str, nonidentical_equal_listeners: List[_MockListener],
 ) -> None:
     for listener in nonidentical_equal_listeners:
         hook.subscribe(event, listener)
@@ -416,7 +418,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
     subtests: SubTests,
     hook: Hook,
     event: str,
-    nonidentical_equal_listeners: List[Mock],
+    nonidentical_equal_listeners: List[_MockListener],
 ) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in nonidentical_equal_listeners:
