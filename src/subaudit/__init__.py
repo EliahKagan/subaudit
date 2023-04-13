@@ -8,17 +8,31 @@ __all__ = [
 ]
 
 import contextlib
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    List,
+    MutableMapping,
+    NoReturn,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
 try:
     from sys import audit, addaudithook
 except ImportError:
     from sysaudit import audit, addaudithook
 
-_table = None
+_R = TypeVar('_R')
+"""Type variable used to represent the return type of an extractor."""
+
+_table: Optional[MutableMapping[str, Tuple[Callable[..., None], ...]]] = None
 """Table mapping each event to its listeners, or None if not yet needed."""
 
 
-def _hook(event, args):
+def _hook(event: str, args: tuple[Any, ...]) -> None:
     """Single audit hook used for all events and handlers."""
     try:
         # Subscripting a dict with str keys should be sufficiently protected by
@@ -33,7 +47,7 @@ def _hook(event, args):
         listener(*args)
 
 
-def _subscribe(event, listener):
+def _subscribe(event: str, listener: Callable[..., None]) -> None:
     """Attach a detachable listener to an event."""
     global _table
 
@@ -45,12 +59,12 @@ def _subscribe(event, listener):
     _table[event] = (*old_listeners, listener)
 
 
-def _fail_unsubscribe(event, listener):
+def _fail_unsubscribe(event: str, listener: Callable[..., None]) -> NoReturn:
     """Raise an exception for an unsuccessful attempt to detach a listener."""
     raise ValueError(f'{event!r} listener {listener!r} never subscribed')
 
 
-def _unsubscribe(event, listener):
+def _unsubscribe(event: str, listener: Callable[..., None]) -> None:
     """Detach a listener that was attached to an event."""
     if _table is None:
         _fail_unsubscribe(event, listener)
@@ -74,7 +88,9 @@ def _unsubscribe(event, listener):
 
 
 @contextlib.contextmanager
-def _listening(event, listener):
+def _listening(event: str,
+               listener: Callable[..., None],
+) -> Generator[None, None, None]:
     """Context manager that subscribes and unsubscribes an event listener."""
     _subscribe(event, listener)
     try:
@@ -84,11 +100,10 @@ def _listening(event, listener):
 
 
 @contextlib.contextmanager
-def extracting(event, extractor):
+def _extracting(event: str,
+                extractor: Callable[..., _R],
+) -> Generator[List[_R], None, None]:
     """Context manager that provides a list of custom-extracted event data."""
     extracts = []
     with _listening(event, lambda *args: extracts.append(extractor(*args))):
         yield extracts
-
-
-# FIXME: Add skip_if_unavailable.
