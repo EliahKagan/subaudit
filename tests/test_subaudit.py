@@ -10,12 +10,16 @@ import uuid
 import attrs
 import pytest
 from pytest import FixtureRequest
+from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
 
 import subaudit
 from subaudit import Hook
 
 _T = TypeVar('_T')
+
+# TODO: Maybe use typing.NewType to introduce Listener and Extractor
+#       "subclasses" of Mock, and possibly others.
 
 
 class _UnboundMethodMock(Mock):
@@ -382,16 +386,51 @@ def test_cannot_unsubscribe_listener_from_other_hook(
         hook2.unsubscribe(event, listener)
 
 
-# FIXME: Test that constructing a Hook does not add an audit hook.
+def test_instance_construction_does_not_add_audit_hook(
+    mocker: MockerFixture,
+) -> None:
+    """Hook is lazy, not adding an audit hook before a listener subscribes."""
+    mock = mocker.patch('subaudit.addaudithook')
+    Hook()
+    mock.assert_not_called()
 
 
-# FIXME: Test that a Hook's first subscription adds an audit hook.
+def test_instance_adds_audit_hook_on_first_subscribe(
+    mocker: MockerFixture, hook: Hook, event: str, listener: Mock,
+) -> None:
+    mock = mocker.patch('subaudit.addaudithook')
+    hook.subscribe(event, listener)
+    mock.assert_called_once()
 
 
-# FIXME: Test that a Hook's subsequent subscriptions don't add audit hooks.
+def test_instance_does_not_add_audit_hook_on_second_subscribe(
+    mocker: MockerFixture,
+    hook: Hook,
+    some_events: Iterator[str],
+    some_listeners: Iterator[Mock],
+) -> None:
+    event1, event2 = some_events
+    listener1, listener2 = some_listeners
+    hook.subscribe(event1, listener1)
+    mock = mocker.patch('subaudit.addaudithook')
+    hook.subscribe(event2, listener2)
+    mock.assert_not_called()
 
 
-# FIXME: Test that a second Hook's first subscription adds an audit hook.
+def test_second_instance_adds_audit_hook_on_first_subscribe(
+    mocker: MockerFixture,
+    some_hooks: Hook,
+    some_events: Iterator[str],
+    some_listeners: Iterator[Mock],
+) -> None:
+    """Different Hook objects do not share the same audit hook."""
+    hook1, hook2 = some_hooks
+    event1, event2 = some_events
+    listener1, listener2 = some_listeners
+    hook1.subscribe(event1, listener1)
+    mock = mocker.patch('subaudit.addaudithook')
+    hook2.subscribe(event2, listener2)
+    mock.assert_called_once()
 
 
 def test_listening_does_not_observe_before_enter(
@@ -445,6 +484,7 @@ def test_listening_does_not_observe_after_exit(
 
 
 def test_listening_exit_calls_unsubscribe(
+    subtests: SubTests,
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
@@ -456,9 +496,12 @@ def test_listening_exit_calls_unsubscribe(
 
     with contextlib.suppress(_FakeError):
         with hook.listening(event, listener):
+            with subtests.test(where='inside-with-block'):
+                unsubscribe.assert_not_called()
             maybe_raise()
 
-    unsubscribe.assert_called_once_with(hook, event, listener)
+    with subtests.test(where='after-with-block'):
+        unsubscribe.assert_called_once_with(hook, event, listener)
 
 
 def test_listening_observes_only_between_enter_and_exit(
@@ -595,6 +638,7 @@ def test_extracting_does_not_extract_after_exit(
 
 
 def test_extracting_exit_calls_unsubscribe_exactly_once(
+    subtests: SubTests,
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
@@ -605,9 +649,12 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor):
+            with subtests.test(where='inside-with-block'):
+                unsubscribe.assert_not_called()
             maybe_raise()
 
-    unsubscribe.assert_called_once()
+    with subtests.test(where='after-with-block'):
+        unsubscribe.assert_called_once()
 
 
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
