@@ -821,6 +821,10 @@ def test_extracting_subscribes_and_unsubscribes_same(
     assert subscribe.mock_calls == unsubscribe.mock_calls
 
 
+# FIXME: Test that high-throughput usage with ~300 listeners on the same event
+#        remains fast.
+
+
 # FIXME: Retest some common cases with audit events from the standard library.
 
 
