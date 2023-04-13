@@ -170,7 +170,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
     reason="Python 3.8+ has sys.audit",
 )
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
-    import sysaudit
+    import sysaudit  # type: ignore[import]
     assert subaudit.audit is sysaudit.audit
 
 
@@ -232,7 +232,7 @@ def test_listener_can_subscribe_multiple_events(
 def test_listeners_called_in_subscribe_order(
     hook: Hook, event: str, some_listeners: Iterator[Mock],
 ) -> None:
-    ordering = []
+    ordering = List[int]()
     listener1, listener2, listener3 = some_listeners
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
@@ -249,7 +249,7 @@ def test_listeners_called_in_subscribe_order(
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
     hook: Hook, event: str, some_listeners: Iterator[Mock],
 ) -> None:
-    ordering = []
+    ordering = List[int]()
     listener1, listener2, listener3, listener4 = some_listeners
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
@@ -270,7 +270,7 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
 def test_listeners_called_in_new_order_after_resubscribe(
     hook: Hook, event: str, some_listeners: Iterator[Mock],
 ) -> None:
-    ordering = []
+    ordering = List[int]()
     listener1, listener2 = some_listeners
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
