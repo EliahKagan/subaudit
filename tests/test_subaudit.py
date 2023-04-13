@@ -122,10 +122,7 @@ def _nonidentical_equal_listeners(request: FixtureRequest) -> List[Mock]:
     group_key = object()
 
     def in_group(other: object) -> bool:
-        try:
-            return other.group_key is group_key
-        except AttributeError:
-            return NotImplemented
+        return getattr(other, 'group_key', None) is group_key
 
     def make_mock() -> Mock:
         return Mock(
@@ -225,8 +222,8 @@ def test_listener_can_subscribe_multiple_events(
     hook: Hook, some_events: Iterator[str], listener: Mock,
 ) -> None:
     event1, event2 = some_events
-    hook.subscribe(event1)
-    hook.subscribe(event2)
+    hook.subscribe(event1, listener)
+    hook.subscribe(event2, listener)
     subaudit.audit(event1, 'a', 'b', 'c')
     subaudit.audit(event2, 'd', 'e')
     assert listener.mock_calls == [call('a', 'b', 'c'), call('d', 'e')]
