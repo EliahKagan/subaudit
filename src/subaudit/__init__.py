@@ -115,10 +115,10 @@ def _extracting(
 
 
 # FIXME: Move the code each method uses into the method and have it use state
-#        belonging to the Hook instance rather than a global _table. Then
-#        remove the old code, so nearly all state and behavior of Hook objects
-#        is coded in this class. This must be done so multiple Hook instances
-#        are independent. It is the very minimum needed to get this class to a
+#        belonging to the Hook instance rather than a global _table, removing
+#        the old code, so nearly all state and behavior of Hook objects is
+#        coded in this class. This must be done so multiple Hook instances are
+#        independent. It is the very minimum needed to get this class to a
 #        state that may be worth using, and to satisfy the tests' requirements.
 #
 # FIXME: Move as much of this class's docstring as is reasonable to the module
