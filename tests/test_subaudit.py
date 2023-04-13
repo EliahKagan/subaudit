@@ -513,26 +513,44 @@ def test_extracting_extracts_between_enter_and_exit(
     assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
 
-# FIXME: Either here or in another test, verify that calling the subscribed
-#        listener with fake args has the effect of appending a fake extract to
-#        the list of extracts.
-def test_extracting_enter_calls_subscribe(
+def text_extracting_enter_calls_subscribe_exactly_once(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+) -> None:
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+    with hook.extracting(event, extractor):
+        subscribe.assert_called_once()
+
+
+def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
     extractor: Mock,
 ) -> None:
-    subscribe: Mock = mocked_subscribe_unsubscribe_cls.subscribe
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
 
     with hook.extracting(event, extractor):
-        with subtests.test('subscribe should be called once'):
-            subscribe.assert_called_once()
         subscribe_hook, subscribe_event, _ = subscribe.calls[0].args
-        with subtests.test('subscribed hook should match'):
+        with subtests.test(argument_name='hook'):
             assert subscribe_hook is hook
-        with subtests.test('subscribed event should match'):
+        with subtests.test(argument_name='event'):
             assert subscribe_event == event
+
+
+def test_extracting_enter_passes_appender_to_subscribe(
+    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+) -> None:
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with hook.extracting(event, extractor) as extracts:
+        subscribe_call, = subscribe.calls
+        _, _, subscribe_listener = subscribe_call.args
+
+    subscribe_listener('a', 'b', 'c')
+    assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
 
 def test_extracting_does_not_observe_after_exit(
@@ -555,10 +573,23 @@ def test_extracting_does_not_extract_after_exit(
     assert extracts == []
 
 
-# FIXME: Either here or in another test, verify that calling the unsubscribed
-#        listener with fake args has the effect of appending a fake extract to
-#        the list of extracts.
-def test_extracting_exit_calls_unsubscribe(
+def test_extracting_exit_calls_unsubscribe_exactly_once(
+    maybe_raise: Callable[[], None],
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: Mock,
+) -> None:
+    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor):
+            maybe_raise()
+
+    unsubscribe.assert_called_once()
+
+
+def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
@@ -572,13 +603,30 @@ def test_extracting_exit_calls_unsubscribe(
         with hook.extracting(event, extractor):
             maybe_raise()
 
-    with subtests.test('unsubscribe should be called once'):
-        unsubscribe.assert_called_once()
     unsubscribe_hook, unsubscribe_event, _ = unsubscribe.calls[0].args
-    with subtests.test('unsubscribed hook should match'):
+    with subtests.test(argument_name='hook'):
         assert unsubscribe_hook is hook
-    with subtests.test('unsubscribed event should match'):
+    with subtests.test(argument_name='event'):
         assert unsubscribe_event == event
+
+
+def test_extracting_exit_passes_appender_to_unsubscribe(
+    maybe_raise: Callable[[], None],
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: Mock,
+) -> None:
+    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor) as extracts:
+            maybe_raise()
+
+    unsubscribe_call, = unsubscribe.calls
+    _, _, unsubscribe_listener = unsubscribe_call.args
+    unsubscribe_listener('a', 'b', 'c')
+    assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
 
 def test_extracting_observes_only_between_enter_and_exit(
@@ -615,6 +663,23 @@ def test_extracting_extracts_only_between_enter_and_exit(
     subaudit.audit(event, 'h', 'i')
 
     assert extracts == [_Extract(args=('d',)), _Extract(args=('e', 'f'))]
+
+
+def test_extracting_subscribes_and_unsubscribes_same(
+    maybe_raise: Callable[[], None],
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: Mock,
+) -> None:
+    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
+    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
+    hook = mocked_subscribe_unsubscribe_cls()
+
+    with contextlib.suppress(_FakeError):
+        with hook.extracting(event, extractor):
+            maybe_raise()
+
+    assert subscribe.mock_calls == unsubscribe.mock_calls
 
 
 # FIXME: Test that a listener cannot be unsubscribed from a different Hook.
