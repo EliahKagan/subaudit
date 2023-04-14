@@ -168,13 +168,16 @@ class _DerivedHookFixture:
 @pytest.fixture(name='derived_hook')
 def _derived_hook() -> _DerivedHookFixture:
     """Make a new Hook subclass with subscribe and unsubscribe mocked."""
+    subscribe_method = _UnboundMethodMock()
+    unsubscribe_method = _UnboundMethodMock()
+
     class MockedSubscribeUnsubscribeHook(Hook):
-        subscribe = _UnboundMethodMock()
-        unsubscribe = _UnboundMethodMock()
+        subscribe = subscribe_method
+        unsubscribe = unsubscribe_method
 
     return _DerivedHookFixture(
-        subscribe_method=MockedSubscribeUnsubscribeHook.subscribe,
-        unsubscribe_method=MockedSubscribeUnsubscribeHook.unsubscribe,
+        subscribe_method=subscribe_method,
+        unsubscribe_method=unsubscribe_method,
         instance=MockedSubscribeUnsubscribeHook(),
     )
 
