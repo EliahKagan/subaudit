@@ -31,16 +31,20 @@ _T = TypeVar('_T')
 
 # TODO: Maybe split this into multiple modules.
 
-# TODO: Maybe use typing.NewType to introduce Listener and Extractor
-#       "subclasses" of Mock, and possibly others.
 
-
-class _MockListener(Protocol):
-    """Protocol for a listener that supports some of the Mock interface."""
+class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
+    """Protocol for objects with assert_* methods and call spying we need."""
 
     __slots__ = ()
 
-    def __call__(self, *__args: Any) -> None: ...
+    @property
+    def called(self) -> bool: ...
+
+    @property
+    def call_count(self) -> int: ...
+
+    @property
+    def mock_calls(self) -> _CallList: ...
 
     def assert_called(self) -> None: ...
 
@@ -58,14 +62,13 @@ class _MockListener(Protocol):
 
     def assert_not_called(self) -> None: ...
 
-    @property
-    def called(self) -> bool: ...
 
-    @property
-    def call_count(self) -> int: ...
+class _MockListener(_MockLike, Protocol):
+    """Protocol for a listener that supports some of the Mock interface."""
 
-    @property
-    def mock_calls(self) -> _CallList: ...
+    __slots__ = ()
+
+    def __call__(self, *__args: Any) -> None: ...
 
     @property
     def side_effect(self) -> Optional[Callable[..., Any]]: ...
