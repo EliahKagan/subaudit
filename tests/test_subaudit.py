@@ -8,8 +8,6 @@ import sys
 from typing import (
     Any,
     Callable,
-    ClassVar,
-    ContextManager,
     Iterator,
     List,
     Optional,
@@ -32,8 +30,7 @@ from typing_extensions import Protocol
 import subaudit
 from subaudit import Hook
 
-_R = TypeVar('_R')
-"""Type variable used to represent return types."""
+_T = TypeVar('_T')
 
 
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
@@ -60,7 +57,8 @@ class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
 
     def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
 
-    def assert_has_calls(self, calls: Sequence[_Call], any_order: bool = False,
+    def assert_has_calls(
+        self, calls: Sequence[_Call], any_order: bool = False,
     ) -> None: ...
 
     def assert_not_called(self) -> None: ...
@@ -128,7 +126,7 @@ def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-def _generate(supplier: Callable[[], _R]) -> Iterator[_R]:
+def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
     """Yield indefinitely many elements, each by calling the supplier."""
     while True:
         yield supplier()
@@ -151,31 +149,14 @@ def _some_hooks() -> Iterator[Hook]:
     return _generate(_make_hook)
 
 
-class MockedSubscribeUnsubscribeHook(Protocol):
-    """Protocol for Hooks with mocked out subscribe and unsubscribe methods."""
-
-    __slots__ = ()
-
-    subscribe: ClassVar[_UnboundMethodMock]
-
-    unsubscribe: ClassVar[_UnboundMethodMock]
-
-    def listening(self, event: str, listener: Callable[..., None],
-    ) -> ContextManager[None]: ...
-
-    def extracting(self, event: str, extractor: Callable[..., _R],
-    ) -> ContextManager[List[_R]]: ...
-
-
 @pytest.fixture(name='mocked_subscribe_unsubscribe_cls')
-def _mocked_subscribe_unsubscribe_hook_cls(
-) -> Type[MockedSubscribeUnsubscribeHook]:
+def _mocked_subscribe_unsubscribe_hook_cls() -> Type[Hook]:
     """New Hook subclass with mocked out subscribe and unsubscribe methods."""
-    class LocalMockedSubscribeUnsubscribeHook(Hook):
-        subscribe: ClassVar[_UnboundMethodMock] = _UnboundMethodMock()
-        unsubscribe: ClassVar[_UnboundMethodMock] = _UnboundMethodMock()
+    class MockedSubscribeUnsubscribeHook(Hook):
+        subscribe = _UnboundMethodMock()
+        unsubscribe = _UnboundMethodMock()
 
-    return LocalMockedSubscribeUnsubscribeHook
+    return MockedSubscribeUnsubscribeHook
 
 
 def _make_event() -> str:
@@ -527,7 +508,7 @@ def test_listening_does_not_observe_before_enter(
 
 
 def test_listening_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -547,7 +528,7 @@ def test_listening_observes_between_enter_and_exit(
 
 
 def test_listening_enter_calls_subscribe(
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -575,7 +556,7 @@ def test_listening_does_not_observe_after_exit(
 def test_listening_exit_calls_unsubscribe(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -645,7 +626,7 @@ def test_extracting_does_not_extract_before_enter(
 
 
 def test_extracting_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -672,7 +653,7 @@ def test_extracting_extracts_between_enter_and_exit(
 
 
 def text_extracting_enter_calls_subscribe_exactly_once(
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -684,7 +665,7 @@ def text_extracting_enter_calls_subscribe_exactly_once(
 
 def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -700,7 +681,7 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
 
 
 def test_extracting_enter_passes_appender_to_subscribe(
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -747,7 +728,7 @@ def test_extracting_does_not_extract_after_exit(
 def test_extracting_exit_calls_unsubscribe_exactly_once(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -767,7 +748,7 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -787,7 +768,7 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
 
 def test_extracting_exit_passes_appender_to_unsubscribe(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -851,7 +832,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
 def test_extracting_subscribes_and_unsubscribes_same(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[MockedSubscribeUnsubscribeHook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
