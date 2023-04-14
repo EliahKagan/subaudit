@@ -288,7 +288,7 @@ def test_subscribed_listener_observes_event(
 
 
 def test_unsubscribed_listener_does_not_observe_event(
-        hook: Hook, event: str, listener: _MockListener,
+    hook: Hook, event: str, listener: _MockListener,
 ) -> None:
     hook.subscribe(event, listener)
     hook.unsubscribe(event, listener)
