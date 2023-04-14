@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypeVar,
 )
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
@@ -149,7 +150,7 @@ def _some_hooks() -> Iterator[Hook]:
 
 
 @pytest.fixture(name='mocked_subscribe_unsubscribe_cls')
-def _mocked_subscribe_unsubscribe_hook_cls() -> type[Hook]:
+def _mocked_subscribe_unsubscribe_hook_cls() -> Type[Hook]:
     """New Hook subclass with mocked out subscribe and unsubscribe methods."""
     class MockedSubscribeUnsubscribeHook(Hook):
         subscribe = _UnboundMethodMock()
@@ -507,7 +508,7 @@ def test_listening_does_not_observe_before_enter(
 
 
 def test_listening_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -527,7 +528,7 @@ def test_listening_observes_between_enter_and_exit(
 
 
 def test_listening_enter_calls_subscribe(
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -555,7 +556,7 @@ def test_listening_does_not_observe_after_exit(
 def test_listening_exit_calls_unsubscribe(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -625,7 +626,7 @@ def test_extracting_does_not_extract_before_enter(
 
 
 def test_extracting_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -652,7 +653,7 @@ def test_extracting_extracts_between_enter_and_exit(
 
 
 def text_extracting_enter_calls_subscribe_exactly_once(
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -664,7 +665,7 @@ def text_extracting_enter_calls_subscribe_exactly_once(
 
 def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -680,7 +681,7 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
 
 
 def test_extracting_enter_passes_appender_to_subscribe(
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -727,7 +728,7 @@ def test_extracting_does_not_extract_after_exit(
 def test_extracting_exit_calls_unsubscribe_exactly_once(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -747,7 +748,7 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -767,7 +768,7 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
 
 def test_extracting_exit_passes_appender_to_unsubscribe(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -831,7 +832,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
 def test_extracting_subscribes_and_unsubscribes_same(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: type[Hook],
+    mocked_subscribe_unsubscribe_cls: Type[Hook],
     event: str,
     extractor: _MockExtractor,
 ) -> None:
