@@ -77,7 +77,25 @@ class _MockListener(_MockLike, Protocol):
     def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
 
 
-# FIXME: Write a _MockExtractor protocol and use it, too.
+@attrs.frozen
+class _Extract:
+    """
+    Auditing event arguments extracted by a custom extractor.
+
+    The point of this type is to be separate from anything in, or used by, the
+    code under test, so no excessively specific behavior wrongly passes tests
+    of more general behavior.
+    """
+    args: Tuple[Any, ...]
+    """Event arguments extracted in a test."""
+
+
+class _MockExtractor(_MockLike, Protocol):
+    """Protocol for an extractor that supports some of the Mock interface."""
+
+    __slots__ = ()
+
+    def __call__(self, *__args: Any) -> _Extract: ...
 
 
 class _UnboundMethodMock(Mock):
@@ -194,21 +212,8 @@ def _nonidentical_equal_listeners(
     return [make_mock() for _ in range(request.param)]
 
 
-@attrs.frozen
-class _Extract:
-    """
-    Auditing event arguments extracted by a custom extractor.
-
-    The point of this type is to be separate from anything in, or used by, the
-    code under test, so no excessively specific behavior wrongly passes tests
-    of more general behavior.
-    """
-    args: Tuple[Any, ...]
-    """Event arguments extracted in a test."""
-
-
 @pytest.fixture(name='extractor')
-def _extractor() -> Mock:
+def _extractor() -> _MockExtractor:
     """Mock extractor. Returns a tuple of its arguments."""
     return Mock(side_effect=lambda *args: _Extract(args))
 
@@ -600,7 +605,7 @@ def test_listening_enter_returns_none(
 
 
 def test_extracting_does_not_observe_before_enter(
-    hook: Hook, event: str, extractor: Mock,
+    hook: Hook, event: str, extractor: _MockExtractor,
 ) -> None:
     context_manager = hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -610,7 +615,7 @@ def test_extracting_does_not_observe_before_enter(
 
 
 def test_extracting_does_not_extract_before_enter(
-    hook: Hook, event: str, extractor: Mock,
+    hook: Hook, event: str, extractor: _MockExtractor,
 ) -> None:
     context_manager = hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -620,7 +625,9 @@ def test_extracting_does_not_extract_before_enter(
 
 
 def test_extracting_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -629,7 +636,7 @@ def test_extracting_does_not_call_subscribe_before_enter(
 
 
 def test_extracting_observes_between_enter_and_exit(
-    hook: Hook, event: str, extractor: Mock,
+    hook: Hook, event: str, extractor: _MockExtractor,
 ) -> None:
     with hook.extracting(event, extractor):
         subaudit.audit(event, 'a', 'b', 'c')
@@ -637,7 +644,7 @@ def test_extracting_observes_between_enter_and_exit(
 
 
 def test_extracting_extracts_between_enter_and_exit(
-    hook: Hook, event: str, extractor: Mock,
+    hook: Hook, event: str, extractor: _MockExtractor,
 ) -> None:
     with hook.extracting(event, extractor) as extracts:
         subaudit.audit(event, 'a', 'b', 'c')
@@ -645,7 +652,9 @@ def test_extracting_extracts_between_enter_and_exit(
 
 
 def text_extracting_enter_calls_subscribe_exactly_once(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -657,7 +666,7 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    extractor: Mock,
+    extractor: _MockExtractor,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -671,7 +680,9 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
 
 
 def test_extracting_enter_passes_appender_to_subscribe(
-    mocked_subscribe_unsubscribe_cls: type[Hook], event: str, extractor: Mock,
+    mocked_subscribe_unsubscribe_cls: type[Hook],
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -685,7 +696,10 @@ def test_extracting_enter_passes_appender_to_subscribe(
 
 
 def test_extracting_does_not_observe_after_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor):
@@ -695,10 +709,12 @@ def test_extracting_does_not_observe_after_exit(
 
 
 def test_extracting_does_not_extract_after_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]].
-    extracts: Optional[List[object]] = None
+    extracts: Optional[List[_Extract]] = None
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor) as extracts:
@@ -713,7 +729,7 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    extractor: Mock,
+    extractor: _MockExtractor,
 ) -> None:
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -733,7 +749,7 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    extractor: Mock,
+    extractor: _MockExtractor,
 ) -> None:
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
     hook = mocked_subscribe_unsubscribe_cls()
@@ -753,12 +769,11 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    extractor: Mock,
+    extractor: _MockExtractor,
 ) -> None:
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
     hook = mocked_subscribe_unsubscribe_cls()
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]]:
-    extracts: Optional[List[object]] = None
+    extracts: Optional[List[_Extract]] = None
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor) as extracts:
@@ -771,7 +786,10 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 
 
 def test_extracting_observes_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
@@ -789,10 +807,12 @@ def test_extracting_observes_only_between_enter_and_exit(
 
 
 def test_extracting_extracts_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
+    maybe_raise: Callable[[], None],
+    hook: Hook,
+    event: str,
+    extractor: _MockExtractor,
 ) -> None:
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]].
-    extracts: Optional[List[object]] = None
+    extracts: Optional[List[_Extract]] = None
 
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
@@ -813,7 +833,7 @@ def test_extracting_subscribes_and_unsubscribes_same(
     maybe_raise: Callable[[], None],
     mocked_subscribe_unsubscribe_cls: type[Hook],
     event: str,
-    extractor: Mock,
+    extractor: _MockExtractor,
 ) -> None:
     subscribe = mocked_subscribe_unsubscribe_cls.subscribe
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
