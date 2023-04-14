@@ -885,14 +885,14 @@ testutils = ["gitpython (>3)"]
 
 [[package]]
 name = "pyright"
-version = "1.1.302"
+version = "1.1.303"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.302-py3-none-any.whl", hash = "sha256:1929e3126b664b5281dba66a789e8e04358afca48c10994ee0243b8c2a14acdf"},
-    {file = "pyright-1.1.302.tar.gz", hash = "sha256:e74a7dfbbb1d754941d015cccea8a6d29b395d8e4cb0e45dcfcaf3b6c6cfd540"},
+    {file = "pyright-1.1.303-py3-none-any.whl", hash = "sha256:8fe3d122d7e965e2df2cef64e1ceb98cff8200f458e7892d92a4c21ee85689c7"},
+    {file = "pyright-1.1.303.tar.gz", hash = "sha256:7daa516424555681e8974b21a95c108c5def791bf5381522b1410026d4da62c1"},
 ]
 
 [package.dependencies]
@@ -905,14 +905,14 @@ dev = ["twine (>=3.4.1)"]
 
 [[package]]
 name = "pytest"
-version = "7.3.0"
+version = "7.3.1"
 description = "pytest: simple powerful testing with Python"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-7.3.0-py3-none-any.whl", hash = "sha256:933051fa1bfbd38a21e73c3960cebdad4cf59483ddba7696c48509727e17f201"},
-    {file = "pytest-7.3.0.tar.gz", hash = "sha256:58ecc27ebf0ea643ebfdf7fb1249335da761a00c9f955bcd922349bcb68ee57d"},
+    {file = "pytest-7.3.1-py3-none-any.whl", hash = "sha256:3799fa815351fea3a5e96ac7e503a96fa51cc9942c3753cda7651b93c1cfa362"},
+    {file = "pytest-7.3.1.tar.gz", hash = "sha256:434afafd78b1d78ed0addf160ad2b77a30d35d4bdf8af234fe621919d9ed15e3"},
 ]
 
 [package.dependencies]
@@ -1416,4 +1416,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "5c94c57be558cf4d8bee459e977516a92f4cc179290f9269cafb45b07fe278aa"
+content-hash = "e97aaba44b411a45f16989c2e542b144153a399f095a9c9f79c4d639ecf6a9fd"

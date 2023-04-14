@@ -30,7 +30,8 @@ from typing_extensions import Protocol
 import subaudit
 from subaudit import Hook
 
-_T = TypeVar('_T')
+_R = TypeVar('_R')
+"""Output type variable."""
 
 
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
@@ -87,6 +88,7 @@ class _Extract:
     code under test, so no excessively specific behavior wrongly passes tests
     of more general behavior.
     """
+
     args: Tuple[Any, ...]
     """Event arguments extracted in a test."""
 
@@ -99,11 +101,11 @@ class _MockExtractor(_MockLike, Protocol):
     def __call__(self, *__args: Any) -> _Extract: ...
 
 
-class _UnboundMethodMock(Mock):
+class _UnboundMethodMock(Mock):  # FIXME: Type-hint this, if possible.
     """A mock that is also a descriptor, to behave like a function."""
 
     def __get__(self, instance, owner=None):
-        """Bind the instance, if any, to produce a "bound method"."""
+        """When accessed through an instance, produce a "bound method"."""
         return self if instance is None else functools.partial(self, instance)
 
 
@@ -126,7 +128,7 @@ def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
+def _generate(supplier: Callable[[], _R]) -> Iterator[_R]:
     """Yield indefinitely many elements, each by calling the supplier."""
     while True:
         yield supplier()
