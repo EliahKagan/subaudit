@@ -33,81 +33,6 @@ _R = TypeVar('_R')
 """Output type variable."""
 
 
-class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
-    """Protocol for objects with assert_* methods and call spying we need."""
-
-    __slots__ = ()
-
-    @property
-    def called(self) -> bool: ...
-
-    @property
-    def call_count(self) -> int: ...
-
-    @property
-    def mock_calls(self) -> _CallList: ...
-
-    def assert_called(self) -> None: ...
-
-    def assert_called_once(self) -> None: ...
-
-    def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_has_calls(
-        self, calls: Sequence[_Call], any_order: bool = False,
-    ) -> None: ...
-
-    def assert_not_called(self) -> None: ...
-
-
-class _MockListener(_MockLike, Protocol):
-    """Protocol for a listener that supports some of the Mock interface."""
-
-    __slots__ = ()
-
-    def __call__(self, *__args: Any) -> None: ...
-
-    @property
-    def side_effect(self) -> Optional[Callable[..., Any]]: ...
-
-    @side_effect.setter
-    def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
-
-
-@attrs.frozen
-class _Extract:
-    """
-    Auditing event arguments extracted by a custom extractor.
-
-    The point of this type is to be separate from anything in, or used by, the
-    code under test, so no excessively specific behavior wrongly passes tests
-    of more general behavior.
-    """
-
-    args: Tuple[Any, ...]
-    """Event arguments extracted in a test."""
-
-
-class _MockExtractor(_MockLike, Protocol):
-    """Protocol for an extractor that supports some of the Mock interface."""
-
-    __slots__ = ()
-
-    def __call__(self, *__args: Any) -> _Extract: ...
-
-
-class _UnboundMethodMock(Mock):  # FIXME: Type-hint this, if possible.
-    """A mock that is also a descriptor, to behave like a function."""
-
-    def __get__(self, instance, owner=None):
-        """When accessed through an instance, produce a "bound method"."""
-        return self if instance is None else functools.partial(self, instance)
-
-
 class _FakeError(Exception):
     """Fake exception for testing."""
 
@@ -148,6 +73,14 @@ def _hook() -> Hook:
 def _some_hooks() -> Iterator[Hook]:
     """Iterator that gives as many Hook instances as needed."""
     return _generate(_make_hook)
+
+
+class _UnboundMethodMock(Mock):  # FIXME: Type-hint this, if possible.
+    """A mock that is also a descriptor, to behave like a function."""
+
+    def __get__(self, instance, owner=None):
+        """When accessed through an instance, produce a "bound method"."""
+        return self if instance is None else functools.partial(self, instance)
 
 
 @attrs.frozen
@@ -198,6 +131,51 @@ def _some_events() -> Iterator[str]:
     return _generate(_make_event)
 
 
+class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
+    """Protocol for objects with assert_* methods and call spying we need."""
+
+    __slots__ = ()
+
+    @property
+    def called(self) -> bool: ...
+
+    @property
+    def call_count(self) -> int: ...
+
+    @property
+    def mock_calls(self) -> _CallList: ...
+
+    def assert_called(self) -> None: ...
+
+    def assert_called_once(self) -> None: ...
+
+    def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_has_calls(
+        self, calls: Sequence[_Call], any_order: bool = False,
+    ) -> None: ...
+
+    def assert_not_called(self) -> None: ...
+
+
+class _MockListener(_MockLike, Protocol):
+    """Protocol for a listener that supports some of the Mock interface."""
+
+    __slots__ = ()
+
+    def __call__(self, *__args: Any) -> None: ...
+
+    @property
+    def side_effect(self) -> Optional[Callable[..., Any]]: ...
+
+    @side_effect.setter
+    def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
+
+
 def _make_listener() -> _MockListener:
     """Create a mock listener."""
     return Mock()
@@ -233,6 +211,28 @@ def _nonidentical_equal_listeners(
         )
 
     return [make_mock() for _ in range(request.param)]
+
+
+@attrs.frozen
+class _Extract:
+    """
+    Auditing event arguments extracted by a custom extractor.
+
+    The point of this type is to be separate from anything in, or used by, the
+    code under test, so no excessively specific behavior wrongly passes tests
+    of more general behavior.
+    """
+
+    args: Tuple[Any, ...]
+    """Event arguments extracted in a test."""
+
+
+class _MockExtractor(_MockLike, Protocol):
+    """Protocol for an extractor that supports some of the Mock interface."""
+
+    __slots__ = ()
+
+    def __call__(self, *__args: Any) -> _Extract: ...
 
 
 @pytest.fixture(name='extractor')
