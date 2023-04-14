@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     TypeVar,
 )
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
