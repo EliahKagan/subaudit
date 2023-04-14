@@ -105,15 +105,14 @@ class _MockExtractor(_MockLike, Protocol):
 class _UnboundMethodMock(Mock, Generic[Unpack[_Ts], _R]):
     """A mock that is also a descriptor, to behave like a function."""
 
-    def __call__(self, instance: object, *args: Unpack[_Ts]) -> _R:
+    def __call__(self, instance: Any, *args: Unpack[_Ts]) -> _R:
         return super().__call__(instance, *args)
 
     @overload
-    def __get__(self, instance: None, owner: Optional[Type[Any]] = None,
-    ) -> Self: ...
+    def __get__(self, instance: None, owner: Optional[Any] = None) -> Self: ...
 
     @overload
-    def __get__(self, instance: object, owner: Optional[Type[Any]] = None,
+    def __get__(self, instance: Any, owner: Optional[Any] = None,
     ) -> Callable[[Unpack[_Ts]], _R]: ...
 
     def __get__(self, instance, owner=None):
