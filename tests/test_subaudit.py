@@ -1,5 +1,7 @@
 """Tests for the subaudit module."""
 
+# TODO: Maybe split this into multiple modules.
+
 import contextlib
 import functools
 import sys
@@ -28,8 +30,6 @@ import subaudit
 from subaudit import Hook
 
 _T = TypeVar('_T')
-
-# TODO: Maybe split this into multiple modules.
 
 
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
