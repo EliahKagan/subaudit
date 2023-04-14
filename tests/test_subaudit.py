@@ -8,7 +8,6 @@ import sys
 from typing import (
     Any,
     Callable,
-    Generic,
     Iterator,
     List,
     Optional,
@@ -16,7 +15,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    overload,
 )
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
 from unittest.mock import _Call, _CallList, Mock, call
@@ -27,14 +25,12 @@ import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
-from typing_extensions import Protocol, Self, TypeVarTuple, Unpack
+from typing_extensions import Protocol
 
 import subaudit
 from subaudit import Hook
 
-_Ts = TypeVarTuple('_Ts')
-
-_R = TypeVar('_R')
+_T = TypeVar('_T')
 
 
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
@@ -61,7 +57,8 @@ class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
 
     def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
 
-    def assert_has_calls(self, calls: Sequence[_Call], any_order: bool = False,
+    def assert_has_calls(
+        self, calls: Sequence[_Call], any_order: bool = False,
     ) -> None: ...
 
     def assert_not_called(self) -> None: ...
@@ -102,18 +99,8 @@ class _MockExtractor(_MockLike, Protocol):
     def __call__(self, *__args: Any) -> _Extract: ...
 
 
-class _UnboundMethodMock(Mock, Generic[Unpack[_Ts], _R]):
+class _UnboundMethodMock(Mock):
     """A mock that is also a descriptor, to behave like a function."""
-
-    def __call__(self, instance: Any, *args: Unpack[_Ts]) -> _R:
-        return super().__call__(instance, *args)
-
-    @overload
-    def __get__(self, instance: None, owner: Optional[Any] = None) -> Self: ...
-
-    @overload
-    def __get__(self, instance: Any, owner: Optional[Any] = None,
-    ) -> Callable[[Unpack[_Ts]], _R]: ...
 
     def __get__(self, instance, owner=None):
         """Bind the instance, if any, to produce a "bound method"."""
@@ -139,7 +126,7 @@ def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-def _generate(supplier: Callable[[], _R]) -> Iterator[_R]:
+def _generate(supplier: Callable[[], _T]) -> Iterator[_T]:
     """Yield indefinitely many elements, each by calling the supplier."""
     while True:
         yield supplier()
@@ -166,8 +153,8 @@ def _some_hooks() -> Iterator[Hook]:
 def _mocked_subscribe_unsubscribe_hook_cls() -> Type[Hook]:
     """New Hook subclass with mocked out subscribe and unsubscribe methods."""
     class MockedSubscribeUnsubscribeHook(Hook):
-        subscribe = _UnboundMethodMock[str, Callable[..., None],  None]()
-        unsubscribe = _UnboundMethodMock[str, Callable[..., None],  None]()
+        subscribe = _UnboundMethodMock()
+        unsubscribe = _UnboundMethodMock()
 
     return MockedSubscribeUnsubscribeHook
 
