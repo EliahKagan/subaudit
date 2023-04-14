@@ -151,14 +151,32 @@ def _some_hooks() -> Iterator[Hook]:
     return _generate(_make_hook)
 
 
-@pytest.fixture(name='mocked_subscribe_unsubscribe_cls')
-def _mocked_subscribe_unsubscribe_hook_cls() -> Type[Hook]:
-    """New Hook subclass with mocked out subscribe and unsubscribe methods."""
+@attrs.frozen
+class _DerivedHookFixture:
+    """A new Hook subclass's mocked (un)subscribe methods and an instance."""
+
+    subscribe_method: Mock
+    """Mock of the unbound subscribe method."""
+
+    unsubscribe_method: Mock
+    """Mock of the unbound unsubscribe method."""
+
+    instance: Hook
+    """Instance of the Hook subclass."""
+
+
+@pytest.fixture(name='derived_hook')
+def _derived_hook() -> _DerivedHookFixture:
+    """Make a new Hook subclass with subscribe and unsubscribe mocked."""
     class MockedSubscribeUnsubscribeHook(Hook):
         subscribe = _UnboundMethodMock()
         unsubscribe = _UnboundMethodMock()
 
-    return MockedSubscribeUnsubscribeHook
+    return _DerivedHookFixture(
+        subscribe_method=MockedSubscribeUnsubscribeHook.subscribe,
+        unsubscribe_method=MockedSubscribeUnsubscribeHook.unsubscribe,
+        instance=MockedSubscribeUnsubscribeHook(),
+    )
 
 
 def _make_event() -> str:
@@ -510,14 +528,10 @@ def test_listening_does_not_observe_before_enter(
 
 
 def test_listening_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
-    event: str,
-    listener: _MockListener,
+    derived_hook: _DerivedHookFixture, event: str, listener: _MockListener,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-    hook.listening(event, listener)
-    subscribe.assert_not_called()
+    derived_hook.instance.listening(event, listener)
+    derived_hook.subscribe_method.assert_not_called()
 
 
 def test_listening_observes_between_enter_and_exit(
@@ -530,15 +544,15 @@ def test_listening_observes_between_enter_and_exit(
 
 
 def test_listening_enter_calls_subscribe(
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
-    event: str,
-    listener: _MockListener,
+    derived_hook: _DerivedHookFixture, event: str, listener: _MockListener,
 ) -> None:
     """An overridden subscribe method will be used by listening."""
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-    with hook.listening(event, listener):
-        subscribe.assert_called_once_with(hook, event, listener)
+    with derived_hook.instance.listening(event, listener):
+        derived_hook.subscribe_method.assert_called_once_with(
+            derived_hook.instance,
+            event,
+            listener,
+        )
 
 
 def test_listening_does_not_observe_after_exit(
@@ -558,22 +572,23 @@ def test_listening_does_not_observe_after_exit(
 def test_listening_exit_calls_unsubscribe(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     listener: _MockListener,
 ) -> None:
     """An overridden unsubscribe method will be called by listening."""
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
     with contextlib.suppress(_FakeError):
-        with hook.listening(event, listener):
+        with derived_hook.instance.listening(event, listener):
             with subtests.test(where='inside-with-block'):
-                unsubscribe.assert_not_called()
+                derived_hook.unsubscribe_method.assert_not_called()
             maybe_raise()
 
     with subtests.test(where='after-with-block'):
-        unsubscribe.assert_called_once_with(hook, event, listener)
+        derived_hook.unsubscribe_method.assert_called_once_with(
+            derived_hook.instance,
+            event,
+            listener,
+        )
 
 
 def test_listening_observes_only_between_enter_and_exit(
@@ -628,14 +643,10 @@ def test_extracting_does_not_extract_before_enter(
 
 
 def test_extracting_does_not_call_subscribe_before_enter(
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
-    event: str,
-    extractor: _MockExtractor,
+    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-    hook.extracting(event, extractor)
-    subscribe.assert_not_called()
+    derived_hook.instance.extracting(event, extractor)
+    derived_hook.subscribe_method.assert_not_called()
 
 
 def test_extracting_observes_between_enter_and_exit(
@@ -655,43 +666,33 @@ def test_extracting_extracts_between_enter_and_exit(
 
 
 def text_extracting_enter_calls_subscribe_exactly_once(
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
-    event: str,
-    extractor: _MockExtractor,
+    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-    with hook.extracting(event, extractor):
-        subscribe.assert_called_once()
+    with derived_hook.instance.extracting(event, extractor):
+        derived_hook.subscribe_method.assert_called_once()
 
 
 def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
-    with hook.extracting(event, extractor):
-        subscribe_hook, subscribe_event, _ = subscribe.calls[0].args
+    with derived_hook.instance.extracting(event, extractor):
+        subscribe_hook, subscribe_event, _ = (
+            derived_hook.subscribe_method.calls[0].args
+        )
         with subtests.test(argument_name='hook'):
-            assert subscribe_hook is hook
+            assert subscribe_hook is derived_hook.instance
         with subtests.test(argument_name='event'):
             assert subscribe_event == event
 
 
 def test_extracting_enter_passes_appender_to_subscribe(
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
-    event: str,
-    extractor: _MockExtractor,
+    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
-    with hook.extracting(event, extractor) as extracts:
-        subscribe_call, = subscribe.calls
+    with derived_hook.instance.extracting(event, extractor) as extracts:
+        subscribe_call, = derived_hook.subscribe_method.calls
         _, _, subscribe_listener = subscribe_call.args
 
     subscribe_listener('a', 'b', 'c')
@@ -730,59 +731,53 @@ def test_extracting_does_not_extract_after_exit(
 def test_extracting_exit_calls_unsubscribe_exactly_once(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor):
+        with derived_hook.instance.extracting(event, extractor):
             with subtests.test(where='inside-with-block'):
-                unsubscribe.assert_not_called()
+                derived_hook.unsubscribe_method.assert_not_called()
             maybe_raise()
 
     with subtests.test(where='after-with-block'):
-        unsubscribe.assert_called_once()
+        derived_hook.unsubscribe_method.assert_called_once()
 
 
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor):
+        with derived_hook.instance.extracting(event, extractor):
             maybe_raise()
 
-    unsubscribe_hook, unsubscribe_event, _ = unsubscribe.calls[0].args
+    unsubscribe_hook, unsubscribe_event, _ = (
+        derived_hook.unsubscribe_method.calls[0].args
+    )
     with subtests.test(argument_name='hook'):
-        assert unsubscribe_hook is hook
+        assert unsubscribe_hook is derived_hook.instance
     with subtests.test(argument_name='event'):
         assert unsubscribe_event == event
 
 
 def test_extracting_exit_passes_appender_to_unsubscribe(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
     extracts: Optional[List[_Extract]] = None
 
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor) as extracts:
+        with derived_hook.instance.extracting(event, extractor) as extracts:
             maybe_raise()
 
-    unsubscribe_call, = unsubscribe.calls
+    unsubscribe_call, = derived_hook.unsubscribe_method.calls
     _, _, unsubscribe_listener = unsubscribe_call.args
     unsubscribe_listener('a', 'b', 'c')
     assert extracts == [_Extract(args=('a', 'b', 'c'))]
@@ -834,19 +829,17 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
 def test_extracting_subscribes_and_unsubscribes_same(
     maybe_raise: Callable[[], None],
-    mocked_subscribe_unsubscribe_cls: Type[Hook],
+    derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    subscribe = mocked_subscribe_unsubscribe_cls.subscribe
-    unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
-    hook = mocked_subscribe_unsubscribe_cls()
-
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor):
+        with derived_hook.instance.extracting(event, extractor):
             maybe_raise()
 
-    assert subscribe.mock_calls == unsubscribe.mock_calls
+    subscribe_calls = derived_hook.subscribe_method.mock_calls
+    unsubscribe_calls = derived_hook.unsubscribe_method.mock_calls
+    assert subscribe_calls == unsubscribe_calls
 
 
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event
