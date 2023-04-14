@@ -697,7 +697,7 @@ def test_extracting_does_not_observe_after_exit(
 def test_extracting_does_not_extract_after_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
 ) -> None:
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]].
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]].
     extracts: Optional[List[object]] = None
 
     with contextlib.suppress(_FakeError):
@@ -757,7 +757,7 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 ) -> None:
     unsubscribe = mocked_subscribe_unsubscribe_cls.unsubscribe
     hook = mocked_subscribe_unsubscribe_cls()
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]]:
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]]:
     extracts: Optional[List[object]] = None
 
     with contextlib.suppress(_FakeError):
@@ -791,7 +791,7 @@ def test_extracting_observes_only_between_enter_and_exit(
 def test_extracting_extracts_only_between_enter_and_exit(
     maybe_raise: Callable[[], None], hook: Hook, event: str, extractor: Mock,
 ) -> None:
-    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extractor]].
+    # FIXME: After adding _MockExtractor, hint this Optional[List[_Extract]].
     extracts: Optional[List[object]] = None
 
     subaudit.audit(event, 'a')
