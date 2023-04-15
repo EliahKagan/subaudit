@@ -621,8 +621,8 @@ def test_listening_observes_only_between_enter_and_exit(
 
     with contextlib.suppress(_FakeError):
         with hook.listening(event, listener):
-            subaudit.audit('d')
-            subaudit.audit('e', 'f')
+            subaudit.audit(event, 'd')
+            subaudit.audit(event, 'e', 'f')
             maybe_raise()
 
     subaudit.audit(event, 'g')
@@ -812,8 +812,8 @@ def test_extracting_observes_only_between_enter_and_exit(
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor):
-            subaudit.audit('d')
-            subaudit.audit('e', 'f')
+            subaudit.audit(event, 'd')
+            subaudit.audit(event, 'e', 'f')
             maybe_raise()
 
     subaudit.audit(event, 'g')
@@ -835,8 +835,8 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
     with contextlib.suppress(_FakeError):
         with hook.extracting(event, extractor) as extracts:
-            subaudit.audit('d')
-            subaudit.audit('e', 'f')
+            subaudit.audit(event, 'd')
+            subaudit.audit(event, 'e', 'f')
             maybe_raise()
 
     subaudit.audit(event, 'g')
