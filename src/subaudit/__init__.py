@@ -5,13 +5,12 @@ __all__ = [
     'audit',
     'addaudithook',
     'Hook',
-    'shared',  # A global Hook instance.
-    'subscribe',  # Calls shared.subscribe.
-    'unsubscribe',  # Calls shared.unsubscribe.
-    'listening',  # Calls shared.listening.
-    'extracting',  # Calls shared.extracting
+    'subscribe',
+    'unsubscribe',
+    'listening',
+    'extracting',
     'skip_if_unavailable',
-]  # FIXME: Delete the above comments. Move any key info to items' docstrings.
+]
 
 from contextlib import AbstractContextManager, contextmanager
 import sys
@@ -218,7 +217,19 @@ class Hook:
             yield extracts
 
 
-# FIXME: Add stuff for the global Hook instance.
+_global_instance = Hook()
+"""
+Hook instance used by the top-level functions.
+
+The module-level subscribe, unsubscribe, listening, and extracting functions
+use this instance. This should not be confused with the behavior of each Hook
+object in installing (at most) one actual auditing event hook.
+"""
+
+subscribe = _global_instance.subscribe
+unsubscribe = _global_instance.unsubscribe
+listening = _global_instance.listening
+extracting = _global_instance.extracting
 
 
 # FIXME: Add skip_if_unavailable.
