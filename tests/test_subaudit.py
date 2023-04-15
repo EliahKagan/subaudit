@@ -29,8 +29,11 @@ from typing_extensions import Protocol
 import subaudit
 from subaudit import Hook
 
-_R = TypeVar('_R', covariant=True)
-"""Output type variable."""
+_R = TypeVar('_R')
+"""Output type variable, in functions."""
+
+_R_co = TypeVar('_R_co', covariant=True)
+"""Output type variable, in classes. Covariant."""
 
 
 class _FakeError(Exception):
@@ -52,14 +55,14 @@ def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-class _MultiSupplier(Generic[_R]):
+class _MultiSupplier(Generic[_R_co]):
     """Adapter of a single-item supplier to produce multiple items."""
 
     __slots__ = ('_supplier',)
 
-    _supplier: Callable[[], _R]
+    _supplier: Callable[[], _R_co]
 
-    def __init__(self, supplier: Callable[[], _R]) -> None:
+    def __init__(self, supplier: Callable[[], _R_co]) -> None:
         """Create a maker from the given single-item supplier."""
         self._supplier = supplier
 
@@ -67,7 +70,7 @@ class _MultiSupplier(Generic[_R]):
         """Vaguely code-like representation for debugging."""
         return f'{type(self).__name__}({self._supplier!r})'
 
-    def __call__(self, count: int) -> Tuple[_R, ...]:
+    def __call__(self, count: int) -> Tuple[_R_co, ...]:
         """Make the specific number (count) of things."""
         return tuple(self._supplier() for _ in range(count))
 
