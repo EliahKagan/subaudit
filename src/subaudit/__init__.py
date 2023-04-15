@@ -49,16 +49,16 @@ class Hook:
     actual audit hook for a Hook instance is installed the first time a
     listener subscribes via the Hook instance, so if the Hook is never needed,
     no audit hook is installed. The suggested approach is to use only a small
-    number of Hook instances, often just one, even if many different listeners
-    will be subscribed and unsubscribed for many (or few) different events.
+    number of Hook instances, usually just one, even if many listeners will be
+    subscribed and unsubscribed for any number of events.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
-    are protected by a mutex. The hook can be called at any time, including as
-    subscribe or unsubscribe runs, because it is called on all audit events
-    (and it filters out all but those of interest). However, IF the Python
-    interpreter is CPython (or another implementation that handles writing an
-    attribute reference, or writing/deleting a dict item with a string key,
-    atomically), the state of the Hook shouldn't be corrupted. At least on
+    are by default protected by a mutex. The hook can be called at any time,
+    including as subscribe or unsubscribe runs: it is called on all audit
+    events, filtering for those of interest. However, if the Python interpreter
+    is CPython (or another implementation that handles writing an attribute
+    reference, and writing/deleting a dict item with a string key, as atomic
+    operations), the state of the Hook shouldn't be corrupted. In short, on
     CPython, strange behavior and segfaults shouldn't happen from an event
     firing, even if a listener subscribes or unsubscribes at the same time.
 
