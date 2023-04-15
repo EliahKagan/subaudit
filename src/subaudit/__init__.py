@@ -135,36 +135,17 @@ class Hook:
             else:
                 del self._table[event]
 
-    @contextmanager
     def listening(
         self, event: str, listener: Callable[..., None],
-    ) -> Generator[None, None, None]:
+    ) -> AbstractContextManager[None]:
         """Context manager to subscribe and unsubscribe an event listener."""
-        self.subscribe(event, listener)
-        try:
-            yield
-        finally:
-            self.unsubscribe(event, listener)
+        return self._make_listening(event, listener)
 
-    @contextmanager
     def extracting(
         self, event: str, extractor: Callable[..., _R],
-    ) -> Generator[List[_R], None, None]:
+    ) -> AbstractContextManager[List[_R]]:
         """Context manager to provide a list of custom-extracted event data."""
-        extracts: List[_R] = []
-
-        def append_extract(*args: Any) -> None:
-            extracts.append(extractor(*args))
-
-        with self.listening(event, append_extract):
-            yield extracts
-
-    @staticmethod
-    def _fail_unsubscribe(
-        event: str, listener: Callable[..., None],
-    ) -> NoReturn:
-        """Raise an error for an unsuccessful attempt to detach a listener."""
-        raise ValueError(f'{event!r} listener {listener!r} never subscribed')
+        return self._make_extracting(event, extractor)
 
     def _hook(self, event: str, args: Tuple[Any, ...]) -> None:
         """Single audit hook used for all events and handlers."""
@@ -179,6 +160,49 @@ class Hook:
 
         for listener in listeners:
             listener(*args)
+
+    @staticmethod
+    def _fail_unsubscribe(
+        event: str, listener: Callable[..., None],
+    ) -> NoReturn:
+        """Raise an error for an unsuccessful attempt to detach a listener."""
+        raise ValueError(f'{event!r} listener {listener!r} never subscribed')
+
+    @contextmanager
+    def _make_listening(
+        self, event: str, listener: Callable[..., None],
+    ) -> Generator[None, None, None]:
+        """
+        Helper for listening.
+
+        Callers shouldn't assume listening returns GeneratorContextManager.
+        This helper allow listening to have the desired type annotations.
+        Subclasses may override listening but shouldn't override or call this.
+        """
+        self.subscribe(event, listener)
+        try:
+            yield
+        finally:
+            self.unsubscribe(event, listener)
+
+    @contextmanager
+    def _make_extracting(
+        self, event: str, extractor: Callable[..., _R],
+    ) -> Generator[List[_R], None, None]:
+        """
+        Helper for extracting.
+
+        Callers shouldn't assume extracting returns GeneratorContextManager.
+        This helper allows extracting to have the desired type annotations.
+        Subclasses may override extracting but shouldn't override or call this.
+        """
+        extracts: List[_R] = []
+
+        def append_extract(*args: Any) -> None:
+            extracts.append(extractor(*args))
+
+        with self._make_listening(event, append_extract):
+            yield extracts
 
 
 # FIXME: Add stuff for the global Hook instance.
