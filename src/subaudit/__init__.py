@@ -40,7 +40,6 @@ ContextManagerFactory = Callable[[], AbstractContextManager]
 """Type alias for classes or factory functions returning context managers."""
 
 
-# FIXME: Probably move some of this class's docstring to the module docstring.
 class Hook:
     """
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
@@ -64,15 +63,14 @@ class Hook:
     firing, even if a listener subscribes or unsubscribes at the same time.
 
     Hook objects are not optimized for the case of an event having a large
-    number of listeners. This is because a Hook stores store each event's
-    listeners in an immutable sequence, rebuilt each time a listener is
-    subscribed or unsubscribed. (This is part of how consistent state is
-    maintained at all times, so the installed audit hook doesn't need to
-    synchronize with subscribe and unsubscribe.) Subscribing N listeners to the
-    same event, without unsubscribing any, takes O(N**2) time. If you need to
-    have more than a couple hundred listeners on the same event at the same
-    time, especially if you are also frequently subscribing and unsubscribing
-    listeners to that same event, this may not be the right tool for the job.
+    number of listeners. This is because a Hook stores each event's listeners
+    in an immutable sequence, rebuilt each time a listener is subscribed or
+    unsubscribed. (This is part of how consistent state is maintained, so the
+    audit hook doesn't need to synchronize with subscribe and unsubscribe.)
+    Subscribing N listeners to the same event without unsubscribing takes
+    O(N**2) time. If you need more than a couple hundred listeners on the same
+    event at the same time, especially if you also frequently subscribe and
+    unsubscribe listeners to that same event, this may be the wrong tool.
     """
 
     __slots__ = ('_lock', '_hook_installed', '_table')
