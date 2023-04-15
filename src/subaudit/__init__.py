@@ -22,7 +22,6 @@ from typing import (
     List,
     MutableMapping,
     NoReturn,
-    Optional,
     Tuple,
     TypeVar,
 )
@@ -81,29 +80,30 @@ class Hook:
     listeners to that same event, this may not be the right tool for the job.
     """
 
-    __slots__ = ('_table',)
+    __slots__ = ('_hook_installed', '_table')
 
-    _table: Optional[_Table]
-    """Table mapping each event to its listeners, or None if not yet needed."""
+    _hook_installed: bool
+    """Whether the audit hook is installed yet."""
+
+    _table: _Table
+    """The table that maps each event to its listeners."""
 
     def __init__(self) -> None:
         """Make an audit hook wrapper, which will use its own audit hook."""
-        self._table = None
+        self._hook_installed = False
+        self._table = {}
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Attach a detachable listener to an event."""
-        if self._table is None:
-            self._table = {}
+        if not self._hook_installed:
             addaudithook(self._hook)
+            self._hook_installed = True
 
         old_listeners = self._table.get(event, ())
         self._table[event] = (*old_listeners, listener)
 
     def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Detach a listener that was attached to an event."""
-        if self._table is None:
-            self._fail_unsubscribe(event, listener)
-
         try:
             listeners = self._table[event]
         except KeyError:
@@ -159,16 +159,12 @@ class Hook:
 
     def _hook(self, event: str, args: Tuple[Any, ...]) -> None:
         """Single audit hook used for all events and handlers."""
-        # We have ensured that _table is a table before _hook is ever called.
-        # FIXME: But change to separate _table and _hook_installed attributes.
-        table: _Table = self._table  # type: ignore[assignment]
-
         try:
             # Subscripting a dict with str keys should be sufficiently
             # protected by the GIL in CPython. This doesn't protect the table
             # rows. But those are tuples that we always replace, rather than
             # lists that we mutate, so we should observe consistent state.
-            listeners = table[event]
+            listeners = self._table[event]
         except KeyError:
             return
 
