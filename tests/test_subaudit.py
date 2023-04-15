@@ -263,7 +263,7 @@ def _extractor_fixture() -> _MockExtractor:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 8),
-    reason="Python 3.8+ has sys.audit",
+    reason='Python 3.8+ has sys.audit',
 )
 def test_audit_is_sys_audit_since_3_8() -> None:
     assert subaudit.audit is sys.audit
@@ -271,7 +271,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
 
 @pytest.mark.skipif(
     sys.version_info >= (3, 8),
-    reason="Python 3.8+ has sys.audit",
+    reason='Python 3.8+ has sys.audit',
 )
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
     import sysaudit  # type: ignore[import]
@@ -280,7 +280,7 @@ def test_audit_is_sysaudit_audit_before_3_8() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 8),
-    reason="Python 3.8+ has sys.addaudithook",
+    reason='Python 3.8+ has sys.addaudithook',
 )
 def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
     assert subaudit.addaudithook is sys.addaudithook
@@ -288,7 +288,7 @@ def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
 
 @pytest.mark.skipif(
     sys.version_info >= (3, 8),
-    reason="Python 3.8+ has sys.addaudithook",
+    reason='Python 3.8+ has sys.addaudithook',
 )
 def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
     import sysaudit  # type: ignore[import]
