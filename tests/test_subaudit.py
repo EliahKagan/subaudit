@@ -75,10 +75,10 @@ def _some_hooks() -> Iterator[Hook]:
     return _generate(_make_hook)
 
 
-class _UnboundMethodMock(Mock):  # FIXME: Type-hint this, if possible.
+class _UnboundMethodMock(Mock):
     """A mock that is also a descriptor, to behave like a function."""
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance: Any, owner: Any = None) -> Any:
         """When accessed through an instance, produce a "bound method"."""
         return self if instance is None else functools.partial(self, instance)
 
