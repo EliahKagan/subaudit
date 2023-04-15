@@ -43,7 +43,7 @@ _table: Optional[_Table] = None
 """Table mapping each event to its listeners, or None if not yet needed."""
 
 
-def _hook(event: str, args: tuple[Any, ...]) -> None:
+def _hook(event: str, args: Tuple[Any, ...]) -> None:
     """Single audit hook used for all events and handlers."""
     # We have ensured that _table is a table before _hook can ever be called.
     # FIXME: Still, use separate _table and _hook_installed variables instead.
