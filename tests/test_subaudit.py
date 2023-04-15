@@ -8,6 +8,7 @@ import sys
 from typing import (
     Any,
     Callable,
+    Generic,
     Iterator,
     List,
     Optional,
@@ -29,7 +30,7 @@ from typing_extensions import Protocol
 import subaudit
 from subaudit import Hook
 
-_R = TypeVar('_R')
+_R = TypeVar('_R', covariant=True)
 """Output type variable."""
 
 
@@ -52,10 +53,24 @@ def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-def _generate(supplier: Callable[[], _R]) -> Iterator[_R]:
-    """Yield indefinitely many elements, each by calling the supplier."""
-    while True:
-        yield supplier()
+class _MultiSupplier(Generic[_R]):
+    """Adapter of a single-item supplier to produce multiple items."""
+
+    __slots__ = ('_supplier',)
+
+    _supplier: Callable[[], _R]
+
+    def __init__(self, supplier: Callable[[], _R]) -> None:
+        """Create a maker from the given single-item supplier."""
+        self._supplier = supplier
+
+    def __repr__(self) -> str:
+        """Vaguely code-like representation for debugging."""
+        return f'{type(self).__name__}({self._supplier!r})'
+
+    def __call__(self, count: int) -> Tuple[_R, ...]:
+        """Make the specific number (count) of things."""
+        return tuple(self._supplier() for _ in range(count))
 
 
 def _make_hook() -> Hook:
@@ -64,15 +79,15 @@ def _make_hook() -> Hook:
 
 
 @pytest.fixture(name='hook')
-def _hook() -> Hook:
-    """Hook instance."""
+def _hook_fixture() -> Hook:
+    """Hook instance (pytest fixture)."""
     return _make_hook()
 
 
-@pytest.fixture(name='some_hooks')
-def _some_hooks() -> Iterator[Hook]:
-    """Iterator that gives as many Hook instances as needed."""
-    return _generate(_make_hook)
+@pytest.fixture(name='make_hooks')
+def _make_hooks_fixture() -> _MultiSupplier[Hook]:
+    """Supplier of multiple Hook instances (pytest fixture)."""
+    return _MultiSupplier(_make_hook)
 
 
 class _UnboundMethodMock(Mock):
@@ -120,15 +135,17 @@ def _make_event() -> str:
 
 
 @pytest.fixture(name='event')
-def _event() -> str:
-    """Randomly generated fake event name."""
+def _event_fixture() -> str:
+    """Randomly generated fake event name (pytest fixture)."""
     return _make_event()
 
 
-@pytest.fixture(name='some_events')
-def _some_events() -> Iterator[str]:
-    """Iterator that gives as many fake event names as needed."""
-    return _generate(_make_event)
+@pytest.fixture(name='make_events')
+def _make_events_fixture() -> _MultiSupplier[str]:
+    """
+    Supplier of multiple randomly generated fake event names (pytest fixture).
+    """
+    return _MultiSupplier(_make_event)
 
 
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
@@ -182,20 +199,22 @@ def _make_listener() -> _MockListener:
 
 
 @pytest.fixture(name='listener')
-def _listener() -> _MockListener:
-    """Mock listener."""
+def _listener_fixture() -> _MockListener:
+    """Mock listener (pytest fixture)."""
     return _make_listener()
 
 
-@pytest.fixture(name='some_listeners')
-def _some_listeners() -> Iterator[_MockListener]:
-    """Iterator that gives as many mock listeners as needed."""
-    return _generate(_make_listener)
+@pytest.fixture(name='make_listeners')
+def _make_listeners_fixture() -> _MultiSupplier[_MockListener]:
+    """Supplier of multiple mock listeners (pytest fixture)."""
+    return _MultiSupplier(_make_listener)
 
 
 @pytest.fixture(name='equal_listeners', params=[2, 3, 5])
-def _equal_listeners(request: FixtureRequest) -> List[_MockListener]:
-    """List of listeners that are different objects but all equal."""
+def _equal_listeners_fixture(
+    request: FixtureRequest,
+) -> Tuple[_MockListener, ...]:
+    """Listeners that are different objects but all equal (pytest fixture)."""
     group_key = object()
 
     def in_group(other: object) -> bool:
@@ -208,7 +227,7 @@ def _equal_listeners(request: FixtureRequest) -> List[_MockListener]:
             group_key=group_key,
         )
 
-    return [make_mock() for _ in range(request.param)]
+    return tuple(make_mock() for _ in range(request.param))
 
 
 @attrs.frozen
@@ -234,8 +253,8 @@ class _MockExtractor(_MockLike, Protocol):
 
 
 @pytest.fixture(name='extractor')
-def _extractor() -> _MockExtractor:
-    """Mock extractor. Returns a tuple of its arguments."""
+def _extractor_fixture() -> _MockExtractor:
+    """Mock extractor. Returns a tuple of its arguments. (Pytest fixture.)"""
     return Mock(side_effect=lambda *args: _Extract(args))
 
 
@@ -295,19 +314,19 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-    hook: Hook, some_events: Iterator[str], listener: _MockListener,
+    hook: Hook, make_events: _MultiSupplier[str], listener: _MockListener,
 ) -> None:
     """Subscribing to one event doesn't observe other events."""
-    event1, event2 = some_events
+    event1, event2 = make_events(2)
     hook.subscribe(event1, listener)
     subaudit.audit(event2, 'a', 'b', 'c')
     listener.assert_not_called()
 
 
 def test_listener_can_subscribe_multiple_events(
-    hook: Hook, some_events: Iterator[str], listener: _MockListener,
+    hook: Hook, make_events: _MultiSupplier[str], listener: _MockListener,
 ) -> None:
-    event1, event2 = some_events
+    event1, event2 = make_events(2)
     hook.subscribe(event1, listener)
     hook.subscribe(event2, listener)
     subaudit.audit(event1, 'a', 'b', 'c')
@@ -316,10 +335,10 @@ def test_listener_can_subscribe_multiple_events(
 
 
 def test_listeners_called_in_subscribe_order(
-    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
+    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
-    listener1, listener2, listener3 = some_listeners
+    listener1, listener2, listener3 = make_listeners(3)
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
     listener3.side_effect = functools.partial(ordering.append, 3)
@@ -333,10 +352,10 @@ def test_listeners_called_in_subscribe_order(
 
 
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
-    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
+    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
-    listener1, listener2, listener3, listener4 = some_listeners
+    listener1, listener2, listener3, listener4 = make_listeners(4)
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
     listener3.side_effect = functools.partial(ordering.append, 3)
@@ -354,10 +373,10 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
 
 
 def test_listeners_called_in_new_order_after_resubscribe(
-    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
+    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
-    listener1, listener2 = some_listeners
+    listener1, listener2 = make_listeners(2)
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
 
@@ -422,10 +441,10 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
 
 
 def test_unsubscribe_keeps_other_listener(
-    hook: Hook, event: str, some_listeners: Iterator[_MockListener],
+    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
-    listener1, listener2 = some_listeners
+    listener1, listener2 = make_listeners(2)
     hook.subscribe(event, listener1)
     hook.subscribe(event, listener2)
     hook.unsubscribe(event, listener1)
@@ -434,7 +453,7 @@ def test_unsubscribe_keeps_other_listener(
 
 
 def test_unsubscribe_removes_last_equal_listener(
-    hook: Hook, event: str, equal_listeners: List[_MockListener],
+    hook: Hook, event: str, equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
     for listener in equal_listeners:
         hook.subscribe(event, listener)
@@ -447,7 +466,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
     subtests: SubTests,
     hook: Hook,
     event: str,
-    equal_listeners: List[_MockListener],
+    equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in equal_listeners:
@@ -461,9 +480,9 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
 
 
 def test_cannot_unsubscribe_listener_from_other_hook(
-    some_hooks: Iterator[Hook], event: str, listener: _MockListener,
+    make_hooks: _MultiSupplier[Hook], event: str, listener: _MockListener,
 ) -> None:
-    hook1, hook2 = some_hooks
+    hook1, hook2 = make_hooks(2)
     hook1.subscribe(event, listener)
     with pytest.raises(ValueError):
         hook2.unsubscribe(event, listener)
@@ -489,11 +508,11 @@ def test_instance_adds_audit_hook_on_first_subscribe(
 def test_instance_does_not_add_audit_hook_on_second_subscribe(
     mocker: MockerFixture,
     hook: Hook,
-    some_events: Iterator[str],
-    some_listeners: Iterator[_MockListener],
+    make_events: _MultiSupplier[str],
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
-    event1, event2 = some_events
-    listener1, listener2 = some_listeners
+    event1, event2 = make_events(2)
+    listener1, listener2 = make_listeners(2)
     hook.subscribe(event1, listener1)
     mock = mocker.patch('subaudit.addaudithook')
     hook.subscribe(event2, listener2)
@@ -502,14 +521,14 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
 
 def test_second_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture,
-    some_hooks: Iterator[Hook],
-    some_events: Iterator[str],
-    some_listeners: Iterator[_MockListener],
+    make_hooks: _MultiSupplier[Hook],
+    make_events: _MultiSupplier[str],
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """Different Hook objects do not share the same audit hook."""
-    hook1, hook2 = some_hooks
-    event1, event2 = some_events
-    listener1, listener2 = some_listeners
+    hook1, hook2 = make_hooks(2)
+    event1, event2 = make_events(2)
+    listener1, listener2 = make_listeners(2)
     hook1.subscribe(event1, listener1)
     mock = mocker.patch('subaudit.addaudithook')
     hook2.subscribe(event2, listener2)
