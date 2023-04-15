@@ -359,7 +359,7 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
     listener3.side_effect = functools.partial(ordering.append, 3)
-    listener3.side_effect = functools.partial(ordering.append, 4)
+    listener4.side_effect = functools.partial(ordering.append, 4)
 
     hook.subscribe(event, listener1)
     hook.subscribe(event, listener2)
