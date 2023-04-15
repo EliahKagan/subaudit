@@ -698,7 +698,7 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
 ) -> None:
     with derived_hook.instance.extracting(event, extractor):
         subscribe_hook, subscribe_event, _ = (
-            derived_hook.subscribe_method.calls[0].args
+            derived_hook.subscribe_method.mock_calls[0].args
         )
         with subtests.test(argument_name='hook'):
             assert subscribe_hook is derived_hook.instance
@@ -710,7 +710,7 @@ def test_extracting_enter_passes_appender_to_subscribe(
     derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
     with derived_hook.instance.extracting(event, extractor) as extracts:
-        subscribe_call, = derived_hook.subscribe_method.calls
+        subscribe_call, = derived_hook.subscribe_method.mock_calls
         _, _, subscribe_listener = subscribe_call.args
 
     subscribe_listener('a', 'b', 'c')
@@ -775,7 +775,7 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
             maybe_raise()
 
     unsubscribe_hook, unsubscribe_event, _ = (
-        derived_hook.unsubscribe_method.calls[0].args
+        derived_hook.unsubscribe_method.mock_calls[0].args
     )
     with subtests.test(argument_name='hook'):
         assert unsubscribe_hook is derived_hook.instance
@@ -795,7 +795,7 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
         with derived_hook.instance.extracting(event, extractor) as extracts:
             maybe_raise()
 
-    unsubscribe_call, = derived_hook.unsubscribe_method.calls
+    unsubscribe_call, = derived_hook.unsubscribe_method.mock_calls
     _, _, unsubscribe_listener = unsubscribe_call.args
     unsubscribe_listener('a', 'b', 'c')
     assert extracts == [_Extract(args=('a', 'b', 'c'))]
