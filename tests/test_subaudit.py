@@ -104,6 +104,8 @@ class _UnboundMethodMock(Mock):
 class _DerivedHookFixture:
     """A new Hook subclass's mocked (un)subscribe methods and an instance."""
 
+    # pylint: disable=too-few-public-methods  # This is an attrs data class.
+
     subscribe_method: Mock
     """Mock of the unbound subscribe method."""
 
@@ -121,6 +123,7 @@ def _derived_hook() -> _DerivedHookFixture:
     unsubscribe_method = _UnboundMethodMock()
 
     class MockedSubscribeUnsubscribeHook(Hook):
+        """Hook subclass for a single test, mocking subscribe/unsubscribe."""
         subscribe = subscribe_method
         unsubscribe = unsubscribe_method
 
@@ -153,6 +156,8 @@ def _make_events_fixture() -> _MultiSupplier[str]:
 class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
     """Protocol for objects with assert_* methods and call spying we need."""
 
+    # pylint: disable=missing-function-docstring  # This is a protocol.
+
     __slots__ = ()
 
     @property
@@ -183,6 +188,8 @@ class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
 
 class _MockListener(_MockLike, Protocol):
     """Protocol for a listener that supports some of the Mock interface."""
+
+    # pylint: disable=missing-function-docstring  # This is a protocol.
 
     __slots__ = ()
 
@@ -242,6 +249,8 @@ class _Extract:
     of more general behavior.
     """
 
+    # pylint: disable=too-few-public-methods  # This is an attrs data class.
+
     args: Tuple[Any, ...]
     """Event arguments extracted in a test."""
 
@@ -258,6 +267,9 @@ class _MockExtractor(_MockLike, Protocol):
 def _extractor_fixture() -> _MockExtractor:
     """Mock extractor. Returns a tuple of its arguments. (Pytest fixture.)"""
     return Mock(side_effect=lambda *args: _Extract(args))
+
+
+# pylint: disable=missing-function-docstring  # Tests are descriptively named.
 
 
 @pytest.mark.xfail(
@@ -277,6 +289,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
     strict=True,
 )
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
+    # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
     assert subaudit.audit is sysaudit.audit
 
@@ -298,6 +311,7 @@ def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
     strict=True,
 )
 def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
+    # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
     assert subaudit.addaudithook is sysaudit.addaudithook
 
