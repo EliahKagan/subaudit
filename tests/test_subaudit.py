@@ -8,12 +8,15 @@ import sys
 from typing import (
     Any,
     Callable,
+    Generic,
     Iterator,
     List,
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypeVar,
+    overload,
 )
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
 from unittest.mock import _Call, _CallList, Mock, call
@@ -24,13 +27,16 @@ import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Self, TypeVarTuple, Unpack
 
 import subaudit
 from subaudit import Hook
 
+_Ts = TypeVarTuple('_Ts')
+"""Type variable tuple for input types."""
+
 _R = TypeVar('_R')
-"""Output type variable."""
+"""Type variable for output type."""
 
 
 class _FakeError(Exception):
@@ -75,12 +81,28 @@ def _some_hooks() -> Iterator[Hook]:
     return _generate(_make_hook)
 
 
-class _UnboundMethodMock(Mock):  # FIXME: Type-hint this, if possible.
+class _UnboundMethodMock(Mock, Generic[Unpack[_Ts], _R]):
     """A mock that is also a descriptor, to behave like a function."""
+
+    def __call__(__mock, self: object, *args: Unpack[_Ts]) -> _R:
+        """Call the mock. (Only overridden to have stricter type hints.)"""
+        return super().__call__(self, *args)
+
+    @overload
+    def __get__(
+        self, instance: None, owner: Optional[Type[object]] = None,
+    ) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: Any, owner: Optional[Type[object]] = None,
+    ) -> Callable[[Unpack[_Ts]], _R]: ...
 
     def __get__(self, instance, owner=None):
         """When accessed through an instance, produce a "bound method"."""
-        return self if instance is None else functools.partial(self, instance)
+        if instance is None:
+            return self
+        return functools.partial(self, instance)
 
 
 @attrs.frozen
@@ -100,8 +122,8 @@ class _DerivedHookFixture:
 @pytest.fixture(name='derived_hook')
 def _derived_hook() -> _DerivedHookFixture:
     """Make a new Hook subclass with subscribe and unsubscribe mocked."""
-    subscribe_method = _UnboundMethodMock()
-    unsubscribe_method = _UnboundMethodMock()
+    subscribe_method = _UnboundMethodMock[str, Callable[..., None], None]()
+    unsubscribe_method = _UnboundMethodMock[str, Callable[..., None], None]()
 
     class MockedSubscribeUnsubscribeHook(Hook):
         subscribe = subscribe_method
