@@ -282,7 +282,7 @@ def test_subscribed_listener_observes_event(
 ) -> None:
     hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
-    listener.assert_called_once_with('event', 'a', 'b', 'c')
+    listener.assert_called_once_with('a', 'b', 'c')
 
 
 def test_unsubscribed_listener_does_not_observe_event(
