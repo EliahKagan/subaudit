@@ -1,11 +1,11 @@
 """subaudit: Subscribe and unsubscribe for specific audit events."""
 
 __all__ = [
+    'ContextManagerFactory',
     'audit',
     'addaudithook',
     'Hook',
-    'SyncHook',
-    'shared',  # A global SyncHook instance.
+    'shared',  # A global Hook instance.
     'subscribe',  # Calls shared.subscribe.
     'unsubscribe',  # Calls shared.unsubscribe.
     'listening',  # Calls shared.listening.
@@ -13,8 +13,9 @@ __all__ = [
     'skip_if_unavailable',
 ]  # FIXME: Delete the above comments. Move any key info to items' docstrings.
 
-import contextlib
+from contextlib import AbstractContextManager, contextmanager
 import sys
+import threading
 from typing import (
     Any,
     Callable,
@@ -22,6 +23,7 @@ from typing import (
     List,
     MutableMapping,
     NoReturn,
+    Optional,
     Tuple,
     TypeVar,
 )
@@ -34,17 +36,11 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
+ContextManagerFactory = Callable[[], AbstractContextManager]
+"""Type alias for classes or factory functions returning context managers."""
 
-# FIXME: Rework "handles writing a single reference as an atomic operation",
-#        which disregards the other issue of the dictionary lookup.
-#
-# FIXME: Move as much of this class's docstring as is reasonable to the module
-#        docstring, but wait to do so until the SyncHook subclass is written.
-#
-# FIXME: Note, somewhere, that a future version of the library *might* scale up
-#        to an asymptotically faster data structure for rows containing large
-#        numbers (thousands? more?) of listeners. OR, explain why it won't.
-#
+
+# FIXME: Probably move some of this class's docstring to the module docstring.
 class Hook:
     """
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
@@ -57,13 +53,15 @@ class Hook:
     number of Hook instances, often just one, even if many different listeners
     will be subscribed and unsubscribed for many (or few) different events.
 
-    The subscribe and unsubscribe methods are NOT thread-safe. However, so long
-    as the caller ensures no data race happens between calls to either or both
-    of those methods, the state of the Hook should not be corrupted... IF the
-    Python interpreter is CPython or otherwise handles writing a single
-    reference as an atomic operation. This is to say: at least on CPython,
-    segfaults or very strange behavior shouldn't happen due to an event firing,
-    even if a listener is subscribing or unsubscribing at the same time.
+    The subscribe and unsubscribe methods, but not the installed audit hook,
+    are protected by a mutex. The hook can be called at any time, including as
+    subscribe or unsubscribe runs, because it is called on all audit events
+    (and it filters out all but those of interest). However, IF the Python
+    interpreter is CPython (or another implementation that handles writing an
+    attribute reference, or writing/deleting a dict item with a string key,
+    atomically), the state of the Hook shouldn't be corrupted. At least on
+    CPython, strange behavior and segfaults shouldn't happen from an event
+    firing, even if a listener subscribes or unsubscribes at the same time.
 
     Hook objects are not optimized for the case of an event having a large
     number of listeners. This is because a Hook stores store each event's
@@ -77,52 +75,71 @@ class Hook:
     listeners to that same event, this may not be the right tool for the job.
     """
 
-    __slots__ = ('_hook_installed', '_table')
+    __slots__ = ('_lock', '_hook_installed', '_table')
+
+    _lock: AbstractContextManager
+    """Mutex or other context manager used to protect subscribe/unsubscribe."""
 
     _hook_installed: bool
     """Whether the audit hook is installed yet."""
 
     _table: MutableMapping[str, Tuple[Callable[..., None], ...]]
-    """The table that maps each event to its listeners."""
+    """Table that maps each event to its listeners."""
 
-    def __init__(self) -> None:
-        """Make an audit hook wrapper, which will use its own audit hook."""
+    def __init__(
+        self, *, sub_lock_factory: Optional[ContextManagerFactory] = None,
+    ) -> None:
+        """
+        Make an audit hook wrapper, which will use its own audit hook.
+
+        If sub_lock_factory is passed, it is called and the result must be a
+        context manager object, which is used as a mutex during subscribing
+        and unsubscribing. To forgo locking, pass contextlib.nullcontext.
+        """
+        if sub_lock_factory is None:
+            sub_lock_factory = threading.Lock
+        self._lock = sub_lock_factory()
         self._hook_installed = False
         self._table = {}
 
+    # FIXME: Add a __repr__ that gives *some* useful debugging information.
+    #        Consider the tradeoff that walking the whole table will require
+    #        that we lock, but this could lead to deadlocks while debugging the
+    #        methods the lock is really for (subscribe and unsubscribe).
+
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Attach a detachable listener to an event."""
-        if not self._hook_installed:
-            addaudithook(self._hook)
-            self._hook_installed = True
+        with self._lock:
+            if not self._hook_installed:
+                addaudithook(self._hook)
+                self._hook_installed = True
 
-        old_listeners = self._table.get(event, ())
-        self._table[event] = (*old_listeners, listener)
+            old_listeners = self._table.get(event, ())
+            self._table[event] = (*old_listeners, listener)
 
     def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Detach a listener that was attached to an event."""
-        try:
-            listeners = self._table[event]
-        except KeyError:
-            self._fail_unsubscribe(event, listener)
+        with self._lock:
+            try:
+                listeners = self._table[event]
+            except KeyError:
+                self._fail_unsubscribe(event, listener)
 
-        # Work with the sequence in reverse to remove the most recent listener.
-        listeners_reversed = list(reversed(listeners))
-        try:
-            listeners_reversed.remove(listener)
-        except ValueError:
-            self._fail_unsubscribe(event, listener)
+            # We search in reverse, to remove the latest matching listener.
+            listeners_reversed = list(reversed(listeners))
+            try:
+                listeners_reversed.remove(listener)
+            except ValueError:
+                self._fail_unsubscribe(event, listener)
 
-        if listeners_reversed:
-            self._table[event] = tuple(reversed(listeners_reversed))
-        else:
-            del self._table[event]
+            if listeners_reversed:
+                self._table[event] = tuple(reversed(listeners_reversed))
+            else:
+                del self._table[event]
 
-    @contextlib.contextmanager
+    @contextmanager
     def listening(
-        self,
-        event: str,
-        listener: Callable[..., None],
+        self, event: str, listener: Callable[..., None],
     ) -> Generator[None, None, None]:
         """Context manager to subscribe and unsubscribe an event listener."""
         self.subscribe(event, listener)
@@ -131,11 +148,9 @@ class Hook:
         finally:
             self.unsubscribe(event, listener)
 
-    @contextlib.contextmanager
+    @contextmanager
     def extracting(
-        self,
-        event: str,
-        extractor: Callable[..., _R],
+        self, event: str, extractor: Callable[..., _R],
     ) -> Generator[List[_R], None, None]:
         """Context manager to provide a list of custom-extracted event data."""
         extracts: List[_R] = []
@@ -148,8 +163,7 @@ class Hook:
 
     @staticmethod
     def _fail_unsubscribe(
-        event: str,
-        listener: Callable[..., None],
+        event: str, listener: Callable[..., None],
     ) -> NoReturn:
         """Raise an error for an unsuccessful attempt to detach a listener."""
         raise ValueError(f'{event!r} listener {listener!r} never subscribed')
@@ -169,7 +183,7 @@ class Hook:
             listener(*args)
 
 
-# FIXME: Add SyncHook and the top-level stuff for the global SyncHook instance.
+# FIXME: Add stuff for the global Hook instance.
 
 
 # FIXME: Add skip_if_unavailable.

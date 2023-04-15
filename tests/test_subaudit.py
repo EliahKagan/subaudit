@@ -881,16 +881,22 @@ def test_extracting_subscribes_and_unsubscribes_same(
     assert subscribe_calls == unsubscribe_calls
 
 
+# FIXME: Test repr.
+
+
+# FIXME: Test default mutual exclusion behavior and the sub_lock_factory
+#        keyword-only argument.
+
+
+# FIXME: Test the top-level stuff for the global Hook instance. *Most* of this
+#        should be achieved by parametrizing test fixures already defined here.
+
+
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event
 #        remains fast.
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
-
-
-# FIXME: Test the SyncHook class as well as the top-level stuff for the global
-#        SyncHook instance. *Most* of this should be achieved by parametrizing
-#        test fixtures that are already defined in this module.
 
 
 # FIXME: Test skip_if_unavailable.
