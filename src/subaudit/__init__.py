@@ -214,6 +214,7 @@ class Hook:
         def append_extract(*args: Any) -> None:
             extracts.append(extractor(*args))
 
+        # FIXME: Call self.listening instead, so overriding works properly.
         with self._make_listening(event, append_extract):
             yield extracts
 

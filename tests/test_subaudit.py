@@ -881,6 +881,9 @@ def test_extracting_subscribes_and_unsubscribes_same(
     assert subscribe_calls == unsubscribe_calls
 
 
+# FIXME: Test that extracting actually delegates to listening.
+
+
 # FIXME: Test repr.
 
 
