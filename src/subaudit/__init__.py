@@ -34,9 +34,6 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
-_Table = MutableMapping[str, Tuple[Callable[..., None], ...]]
-"""Type of the table that maps each event to its listeners."""
-
 
 # FIXME: Rework "handles writing a single reference as an atomic operation",
 #        which disregards the other issue of the dictionary lookup.
@@ -85,7 +82,7 @@ class Hook:
     _hook_installed: bool
     """Whether the audit hook is installed yet."""
 
-    _table: _Table
+    _table: MutableMapping[str, Tuple[Callable[..., None], ...]]
     """The table that maps each event to its listeners."""
 
     def __init__(self) -> None:
