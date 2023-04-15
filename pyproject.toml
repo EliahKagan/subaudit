@@ -40,3 +40,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "pytest_subtests"
+ignore_missing_imports = true
