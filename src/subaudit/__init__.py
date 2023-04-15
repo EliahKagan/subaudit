@@ -18,7 +18,6 @@ import sys
 from typing import (
     Any,
     Callable,
-    ContextManager,
     Generator,
     List,
     MutableMapping,
@@ -39,96 +38,7 @@ _R = TypeVar('_R')
 _Table = MutableMapping[str, Tuple[Callable[..., None], ...]]
 """Type of the table that maps each event to its listeners."""
 
-_table: Optional[_Table] = None
-"""Table mapping each event to its listeners, or None if not yet needed."""
 
-
-def _hook(event: str, args: Tuple[Any, ...]) -> None:
-    """Single audit hook used for all events and handlers."""
-    # We have ensured that _table is a table before _hook can ever be called.
-    # FIXME: Still, use separate _table and _hook_installed variables instead.
-    table: _Table = _table  # type: ignore[assignment]
-
-    try:
-        # Subscripting a dict with str keys should be sufficiently protected by
-        # the GIL in CPython. This doesn't protect the table rows. But those
-        # are tuples that we always replace, rather than lists that we mutate,
-        # so we should observe consistent state.
-        listeners = table[event]
-    except KeyError:
-        return
-
-    for listener in listeners:
-        listener(*args)
-
-
-def _subscribe(event: str, listener: Callable[..., None]) -> None:
-    global _table
-
-    if _table is None:
-        _table = {}
-        addaudithook(_hook)
-
-    old_listeners = _table.get(event, ())
-    _table[event] = (*old_listeners, listener)
-
-
-def _fail_unsubscribe(event: str, listener: Callable[..., None]) -> NoReturn:
-    """Raise an exception for an unsuccessful attempt to detach a listener."""
-    raise ValueError(f'{event!r} listener {listener!r} never subscribed')
-
-
-def _unsubscribe(event: str, listener: Callable[..., None]) -> None:
-    if _table is None:
-        _fail_unsubscribe(event, listener)
-
-    try:
-        listeners = _table[event]
-    except KeyError:
-        _fail_unsubscribe(event, listener)
-
-    # Work with the sequence in reverse to remove the most recent listener.
-    listeners_reversed = list(reversed(listeners))
-    try:
-        listeners_reversed.remove(listener)
-    except ValueError:
-        _fail_unsubscribe(event, listener)
-
-    if listeners_reversed:
-        _table[event] = tuple(reversed(listeners_reversed))
-    else:
-        del _table[event]
-
-
-@contextlib.contextmanager
-def _listening(
-    event: str,
-    listener: Callable[..., None],
-) -> Generator[None, None, None]:
-    _subscribe(event, listener)
-    try:
-        yield
-    finally:
-        _unsubscribe(event, listener)
-
-
-@contextlib.contextmanager
-def _extracting(
-    event: str,
-    extractor: Callable[..., _R],
-) -> Generator[List[_R], None, None]:
-    extracts = []
-    with _listening(event, lambda *args: extracts.append(extractor(*args))):
-        yield extracts
-
-
-# FIXME: Move the code each method uses into the method and have it use state
-#        belonging to the Hook instance rather than a global _table, removing
-#        the old code, so nearly all state and behavior of Hook objects is
-#        coded in this class. This must be done so multiple Hook instances are
-#        independent. It is the very minimum needed to get this class to a
-#        state that may be worth using, and to satisfy the tests' requirements.
-#
 # FIXME: Rework "handles writing a single reference as an atomic operation",
 #        which disregards the other issue of the dictionary lookup.
 #
@@ -171,31 +81,99 @@ class Hook:
     listeners to that same event, this may not be the right tool for the job.
     """
 
-    __slots__ = ()
+    __slots__ = ('_table',)
+
+    _table: Optional[_Table]
+    """Table mapping each event to its listeners, or None if not yet needed."""
+
+    def __init__(self) -> None:
+        """Make an audit hook wrapper, which will use its own audit hook."""
+        self._table = None
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Attach a detachable listener to an event."""
-        _subscribe(event, listener)
+        if self._table is None:
+            self._table = {}
+            addaudithook(self._hook)
+
+        old_listeners = self._table.get(event, ())
+        self._table[event] = (*old_listeners, listener)
 
     def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Detach a listener that was attached to an event."""
-        _unsubscribe(event, listener)
+        if self._table is None:
+            self._fail_unsubscribe(event, listener)
 
+        try:
+            listeners = self._table[event]
+        except KeyError:
+            self._fail_unsubscribe(event, listener)
+
+        # Work with the sequence in reverse to remove the most recent listener.
+        listeners_reversed = list(reversed(listeners))
+        try:
+            listeners_reversed.remove(listener)
+        except ValueError:
+            self._fail_unsubscribe(event, listener)
+
+        if listeners_reversed:
+            self._table[event] = tuple(reversed(listeners_reversed))
+        else:
+            del self._table[event]
+
+    @contextlib.contextmanager
     def listening(
         self,
         event: str,
         listener: Callable[..., None],
-    ) -> ContextManager[None]:
+    ) -> Generator[None, None, None]:
         """Context manager to subscribe and unsubscribe an event listener."""
-        return _listening(event, listener)
+        self.subscribe(event, listener)
+        try:
+            yield
+        finally:
+            self.unsubscribe(event, listener)
 
+    @contextlib.contextmanager
     def extracting(
         self,
         event: str,
         extractor: Callable[..., _R],
-    ) -> ContextManager[List[_R]]:
+    ) -> Generator[List[_R], None, None]:
         """Context manager to provide a list of custom-extracted event data."""
-        return _extracting(event, extractor)
+        extracts: List[_R] = []
+
+        def append_extract(*args: Any) -> None:
+            extracts.append(extractor(*args))
+
+        with self.listening(event, append_extract):
+            yield extracts
+
+    @staticmethod
+    def _fail_unsubscribe(
+        event: str,
+        listener: Callable[..., None],
+    ) -> NoReturn:
+        """Raise an error for an unsuccessful attempt to detach a listener."""
+        raise ValueError(f'{event!r} listener {listener!r} never subscribed')
+
+    def _hook(self, event: str, args: Tuple[Any, ...]) -> None:
+        """Single audit hook used for all events and handlers."""
+        # We have ensured that _table is a table before _hook is ever called.
+        # FIXME: But change to separate _table and _hook_installed attributes.
+        table: _Table = self._table  # type: ignore[assignment]
+
+        try:
+            # Subscripting a dict with str keys should be sufficiently
+            # protected by the GIL in CPython. This doesn't protect the table
+            # rows. But those are tuples that we always replace, rather than
+            # lists that we mutate, so we should observe consistent state.
+            listeners = table[event]
+        except KeyError:
+            return
+
+        for listener in listeners:
+            listener(*args)
 
 
 # FIXME: Add SyncHook and the top-level stuff for the global SyncHook instance.
