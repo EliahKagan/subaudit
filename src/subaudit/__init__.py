@@ -26,6 +26,7 @@ from typing import (
     Tuple,
     TypeVar,
 )
+import unittest
 
 if sys.version_info < (3, 8):
     from sysaudit import audit, addaudithook
@@ -232,4 +233,8 @@ listening = _global_instance.listening
 extracting = _global_instance.extracting
 
 
-# FIXME: Add skip_if_unavailable.
+skip_if_unavailable = unittest.skipIf(
+    sys.version_info < (3, 8),
+    'Python Runtime Audit Hooks (PEP 578) were introduced in Python 3.8.',
+)
+"""Skip a unittest test unless the standard library supports audit events."""
