@@ -437,7 +437,7 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
         hook.subscribe(event, listener)
     with pytest.raises(ValueError):
         for _ in range(count + 1):
-            hook.subscribe(event, listener)
+            hook.unsubscribe(event, listener)
 
 
 def test_unsubscribe_keeps_other_listener(
