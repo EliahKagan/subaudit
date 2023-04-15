@@ -100,10 +100,9 @@ class Hook:
         self._hook_installed = False
         self._table = {}
 
-    # FIXME: Add a __repr__ that gives *some* useful debugging information.
-    #        Consider the tradeoff that walking the whole table will require
-    #        that we lock, but this could lead to deadlocks while debugging the
-    #        methods the lock is really for (subscribe and unsubscribe).
+    def __repr__(self) -> str:
+        """Representation for debugging. Not runnable as Python code."""
+        return f'<{type(self).__name__} at {id(self):#x}: {self._summarize()}>'
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Attach a detachable listener to an event."""
@@ -160,6 +159,20 @@ class Hook:
 
         for listener in listeners:
             listener(*args)
+
+    def _summarize(self) -> str:
+        """
+        Summarize the state of the Hook instance. Used as part of the repr.
+
+        For now, just include info CPython lets us get safely without a lock.
+        """
+        if not self._hook_installed:
+            return 'audit hook not installed'
+
+        num_events = len(self._table)
+        if num_events == 1:
+            return f'watching {num_events} event'
+        return f'watching {num_events} events'
 
     @staticmethod
     def _fail_unsubscribe(
