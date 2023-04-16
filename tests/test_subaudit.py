@@ -193,7 +193,7 @@ class _MockListener(_MockLike, Protocol):
 
     __slots__ = ()
 
-    def __call__(self, *__args: Any) -> None: ...
+    def __call__(self, *args: Any) -> None: ...
 
     @property
     def side_effect(self) -> Optional[Callable[..., Any]]: ...
@@ -265,7 +265,7 @@ class _MockExtractor(_MockLike, Protocol):
 
     __slots__ = ()
 
-    def __call__(self, *__args: Any) -> _Extract: ...
+    def __call__(self, *args: Any) -> _Extract: ...
 
 
 @pytest.fixture(name='extractor')
