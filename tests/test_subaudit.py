@@ -24,7 +24,7 @@ import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
-from typing_extensions import Protocol
+from typing_extensions import Protocol, Self
 
 import subaudit
 from subaudit import Hook
@@ -254,6 +254,11 @@ class _Extract:
     args: Tuple[Any, ...]
     """Event arguments extracted in a test."""
 
+    @classmethod
+    def from_separate_args(cls, *args: Any) -> Self:
+        """Create an _Extract instance from separately passed arguments."""
+        return cls(args=args)
+
 
 class _MockExtractor(_MockLike, Protocol):
     """Protocol for an extractor that supports some of the Mock interface."""
@@ -266,7 +271,7 @@ class _MockExtractor(_MockLike, Protocol):
 @pytest.fixture(name='extractor')
 def _extractor_fixture() -> _MockExtractor:
     """Mock extractor. Returns a tuple of its arguments. (Pytest fixture.)"""
-    return Mock(side_effect=lambda *args: _Extract(args))
+    return Mock(wraps=_Extract.from_separate_args)
 
 
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
