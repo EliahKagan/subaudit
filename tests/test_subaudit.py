@@ -202,9 +202,13 @@ class _MockListener(_MockLike, Protocol):
     def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
 
 
+def _null_listener(*_: Any) -> None:
+    """Listener that does nothing, for spec-ing."""
+
+
 def _make_listener() -> _MockListener:
     """Create a mock listener."""
-    return Mock()
+    return Mock(spec=_null_listener)
 
 
 @pytest.fixture(name='listener')
@@ -231,6 +235,7 @@ def _equal_listeners_fixture(
 
     def make_mock() -> _MockListener:
         return Mock(
+            spec=_null_listener,
             __eq__=Mock(side_effect=in_group),
             __hash__=Mock(return_value=hash(group_key)),
             group_key=group_key,
