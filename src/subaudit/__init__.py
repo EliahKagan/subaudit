@@ -44,21 +44,22 @@ class Hook:
     """
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
 
-    Listeners are subscribed to specific auditing events and may be unsubscribe
-    from them. Only one audit hook is actually installed (per Hook instance).
-    This happens the first time a listener subscribes via the instance; if the
-    Hook is never needed, no audit hook is installed. The suggested usage is to
-    create only a small number of Hook instances, often just one for the whole
-    program, even if many listeners will be subscribed to any number of events.
+    Listeners are subscribed to specific auditing events, and they may later be
+    unsubscribed from them. Only one audit hook is actually installed (per Hook
+    instance). This happens the first time a listener is subscribed to any
+    event via the instance, so if the Hook is not used, then no audit hook is
+    installed. I recommend creating only a small number of Hook instances,
+    often one for the whole program, even if many listeners will be subscribed
+    to any number of events.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
     are by default protected by a mutex. The audit hook can be called at any
     time, including as subscribe or unsubscribe runs: it is called on all audit
     events, filtering for those of interest. However, if the Python interpreter
-    is CPython (or another implementation that handles writing an attribute
-    reference atomically, and writing or deleting a dict item with a string key
-    atomically), the state of the Hook shouldn't be corrupted. In short, on
-    CPython, strange behavior and segfaults shouldn't happen due to an event
+    is CPython — or another implementation that handles writing an attribute
+    reference atomically, and writing or deleting an item in a dict with string
+    keys atomically — then the Hook's state should not be corrupted. In short,
+    on CPython, strange behavior and segfaults shouldn't happen due to an event
     firing, even if a listener subscribes or unsubscribes at the same time.
 
     Hook objects are not optimized for the case of an event having a large
