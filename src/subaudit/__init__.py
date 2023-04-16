@@ -48,9 +48,9 @@ class Hook:
     Only one audit hook (per Hook instance) is used. It is installed the first
     time a listener is subscribed to any event via the Hook instance; if the
     instance is never used, no audit hook is installed. A program rarely needs
-    multiple Hook instances, even with many listeners and events. Top-level
-    subscribe, unsubscribe, listening, and extracting functions are provided,
-    which use a pre-created Hook instance with the lifetime of the application.
+    multiple Hook instances, even with many listeners and events. The subaudit
+    module provides top-level subscribe, unsubscribe, listening, and extracting
+    functions, which use a pre-created Hook instance.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
     are by default protected by a mutex. The audit hook can be called at any
