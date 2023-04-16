@@ -56,10 +56,10 @@ class Hook:
     are by default protected by a mutex. The audit hook can be called at any
     time, including as subscribe or unsubscribe runs: it is called on all audit
     events, filtering for those of interest. However, if the Python interpreter
-    is CPython — or another implementation that handles writing an attribute
-    reference atomically, and writing or deleting an item in a dict with string
-    keys atomically — then the Hook's state should not be corrupted. In short,
-    on CPython, strange behavior and segfaults shouldn't happen due to an event
+    is CPython — or another implementation where writing an attribute reference
+    is atomic, and writing or deleting an item in a dict with string keys is
+    atomic — then the Hook's state should not be corrupted. In short, on
+    CPython, strange behavior and segfaults shouldn't happen due to an event
     firing, even if a listener subscribes or unsubscribes at the same time.
 
     Hook objects are not optimized for the case of an event having a large
