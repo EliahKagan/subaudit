@@ -29,11 +29,8 @@ from typing_extensions import Protocol, Self
 import subaudit
 from subaudit import Hook
 
-_R = TypeVar('_R')
-"""Output type variable, in functions."""
-
 _R_co = TypeVar('_R_co', covariant=True)
-"""Output type variable, in classes. Covariant."""
+"""Output type variable."""
 
 
 class _FakeError(Exception):
