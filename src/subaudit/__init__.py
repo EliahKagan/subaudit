@@ -44,22 +44,21 @@ class Hook:
     """
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
 
-    Listeners subscribe to specific auditing events and may unsubscribe from
-    them. Only one audit hook is actually installed (per Hook instance). The
-    actual audit hook for a Hook instance is installed the first time a
-    listener subscribes via the Hook instance, so if the Hook is never needed,
-    no audit hook is installed. The suggested use is to create only a small
-    number of Hook instances, often just one for the whole program, even if
-    many listeners will be subscribed to any number of events.
+    Listeners are subscribed to specific auditing events and may be unsubscribe
+    from them. Only one audit hook is actually installed (per Hook instance).
+    This happens the first time a listener subscribes via the instance; if the
+    Hook is never needed, no audit hook is installed. The suggested usage is to
+    create only a small number of Hook instances, often just one for the whole
+    program, even if many listeners will be subscribed to any number of events.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
-    are by default protected by a mutex. The hook can be called at any time,
-    including as subscribe or unsubscribe runs: it is called on all audit
+    are by default protected by a mutex. The audit hook can be called at any
+    time, including as subscribe or unsubscribe runs: it is called on all audit
     events, filtering for those of interest. However, if the Python interpreter
     is CPython (or another implementation that handles writing an attribute
-    reference, and writing/deleting a dict item with a string key, as atomic
-    operations), the state of the Hook shouldn't be corrupted. In short, on
-    CPython, strange behavior and segfaults shouldn't happen from an event
+    reference atomically, and writing or deleting a dict item with a string key
+    atomically), the state of the Hook shouldn't be corrupted. In short, on
+    CPython, strange behavior and segfaults shouldn't happen due to an event
     firing, even if a listener subscribes or unsubscribes at the same time.
 
     Hook objects are not optimized for the case of an event having a large
@@ -67,10 +66,10 @@ class Hook:
     in an immutable sequence, rebuilt each time a listener is subscribed or
     unsubscribed. (This is part of how consistent state is maintained, so the
     audit hook doesn't need to synchronize with subscribe and unsubscribe.)
-    Subscribing N listeners to the same event without unsubscribing takes
-    O(N**2) time. If you need more than a couple hundred listeners on the same
-    event at the same time, especially if you also frequently subscribe and
-    unsubscribe listeners to that same event, this may be the wrong tool.
+    Subscribing N listeners to the same event without unsubscribing takes O(N²)
+    time. If you need more than a couple hundred listeners on the same event at
+    the same time, especially if you also frequently subscribe and unsubscribe
+    listeners to that same event, this may be the wrong tool.
     """
 
     __slots__ = ('_lock', '_hook_installed', '_table')
