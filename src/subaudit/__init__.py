@@ -48,9 +48,9 @@ class Hook:
     them. Only one audit hook is actually installed (per Hook instance). The
     actual audit hook for a Hook instance is installed the first time a
     listener subscribes via the Hook instance, so if the Hook is never needed,
-    no audit hook is installed. The suggested approach is to use only a small
-    number of Hook instances, usually just one, even if many listeners will be
-    subscribed and unsubscribed for any number of events.
+    no audit hook is installed. The suggested use is to create only a small
+    number of Hook instances, often just one for the whole program, even if
+    many listeners will be subscribed to any number of events.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
     are by default protected by a mutex. The hook can be called at any time,
