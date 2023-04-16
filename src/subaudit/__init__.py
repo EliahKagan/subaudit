@@ -44,13 +44,13 @@ class Hook:
     """
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
 
-    Listeners are subscribed to specific auditing events, and they may later be
-    unsubscribed from them. Only one audit hook is actually installed (per Hook
-    instance). This happens the first time a listener is subscribed to any
-    event via the instance, so if the Hook is not used, then no audit hook is
-    installed. I recommend creating only a small number of Hook instances,
-    often one for the whole program, even if many listeners will be subscribed
-    to any number of events.
+    Listeners are subscribed and unsubscribed for specific auditing events.
+    Only one audit hook (per Hook instance) is used. It is installed the first
+    time a listener is subscribed to any event via the Hook instance; if the
+    instance is never used, no audit hook is installed. A program rarely needs
+    multiple Hook instances, even with many listeners and events. Top-level
+    subscribe, unsubscribe, listening, and extracting functions are provided,
+    which use a pre-created Hook instance with the lifetime of the application.
 
     The subscribe and unsubscribe methods, but not the installed audit hook,
     are by default protected by a mutex. The audit hook can be called at any
