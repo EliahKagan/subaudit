@@ -102,7 +102,7 @@ class _UnboundMethodMock(Mock):
 
 @attrs.frozen
 class _DerivedHookFixture:
-    """A new Hook subclass's mocked (un)subscribe methods and an instance."""
+    """A new Hook subclass's method mocks, and an instance of the subclass."""
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
@@ -112,24 +112,36 @@ class _DerivedHookFixture:
     unsubscribe_method: Mock
     """Mock of the unbound unsubscribe method."""
 
+    listening_method: Mock
+    """Mock of the unbound listening context manager method."""
+
+    extracting_method: Mock
+    """Mock of the unbound extracting context manager method."""
+
     instance: Hook
-    """Instance of the Hook subclass."""
+    """Instance of the Hook subclass whose methods are mocked."""
 
 
 @pytest.fixture(name='derived_hook')
 def _derived_hook() -> _DerivedHookFixture:
-    """Make a new Hook subclass with subscribe and unsubscribe mocked."""
+    """Make a new Hook subclass with the four important methods mocked."""
     subscribe_method = _UnboundMethodMock(wraps=Hook.subscribe)
     unsubscribe_method = _UnboundMethodMock(wraps=Hook.unsubscribe)
+    listening_method = _UnboundMethodMock(wraps=Hook.listening)
+    extracting_method = _UnboundMethodMock(wraps=Hook.extracting)
 
     class MockedSubscribeUnsubscribeHook(Hook):
-        """Hook subclass for a single test, mocking subscribe/unsubscribe."""
+        """Hook subclass with mocked methods, for a single test."""
         subscribe = subscribe_method
         unsubscribe = unsubscribe_method
+        listening = listening_method
+        extracting = extracting_method
 
     return _DerivedHookFixture(
         subscribe_method=subscribe_method,
         unsubscribe_method=unsubscribe_method,
+        listening_method=listening_method,
+        extracting_method=extracting_method,
         instance=MockedSubscribeUnsubscribeHook(),
     )
 
