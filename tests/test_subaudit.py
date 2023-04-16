@@ -900,7 +900,21 @@ def test_extracting_subscribes_and_unsubscribes_same(
     assert subscribe_calls == unsubscribe_calls
 
 
-# FIXME: Test that extracting actually delegates to listening.
+def test_extracting_delegates_to_listening(
+    subtests: SubTests,
+    derived_hook: _DerivedHookFixture,
+    event: str,
+    extractor: _MockExtractor,
+) -> None:
+    """Overriding listening customizes the behavior of extracting too."""
+    with contextlib.suppress(_FakeError):
+        with derived_hook.instance.extracting(event, extractor):
+            with subtests.test('listening called'):
+                derived_hook.listening_method.assert_called_once()
+            with subtests.test('listening call matches subscribe call'):
+                listening_calls = derived_hook.listening_method.mock_calls
+                subscribe_calls = derived_hook.subscribe_method.mock_calls
+                assert listening_calls == subscribe_calls
 
 
 # FIXME: Test repr.
