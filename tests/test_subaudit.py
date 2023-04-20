@@ -42,7 +42,7 @@ class _FakeError(Exception):
 
 
 @pytest.fixture(name='maybe_raise', params=[False, True])
-def _maybe_raise(request: FixtureRequest) -> Callable[[], None]:
+def _maybe_raise_fixture(request: FixtureRequest) -> Callable[[], None]:
     """
     A function that, when called, either raises _FakeError or does nothing.
 
