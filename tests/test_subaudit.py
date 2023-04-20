@@ -3,12 +3,15 @@
 # TODO: Maybe split this into multiple modules.
 
 import contextlib
+import enum
 import functools
 import re
 import sys
+import threading
 from typing import (
     Any,
     Callable,
+    Generator,
     Generic,
     List,
     Optional,
@@ -100,7 +103,9 @@ class _UnboundMethodMock(Mock):
 
 @attrs.frozen
 class _DerivedHookFixture:
-    """A new Hook subclass's method mocks, and an instance of the subclass."""
+    """
+    New Hook subclass method mocks and instance, for the derived_hook fixture.
+    """
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
@@ -122,7 +127,7 @@ class _DerivedHookFixture:
 
 @pytest.fixture(name='derived_hook')
 def _derived_hook() -> _DerivedHookFixture:
-    """Make a new Hook subclass with the four important methods mocked."""
+    """Make a new Hook subclass with methods mocked (pytest fixture)."""
     subscribe_method = _UnboundMethodMock(wraps=Hook.subscribe)
     unsubscribe_method = _UnboundMethodMock(wraps=Hook.unsubscribe)
     listening_method = _UnboundMethodMock(wraps=Hook.listening)
@@ -291,9 +296,9 @@ def _extractor_fixture() -> _MockExtractor:
 
 @attrs.frozen
 class _ReprAsserter:
-    """
-    Callable to assert correct Hook repr. (Class to facilitate clearer typing.)
-    """
+    """Callable to assert correct Hook repr."""
+
+    # pylint: disable=too-few-public-methods  # Class for clearer type hinting.
 
     def __call__(
         self,
@@ -316,6 +321,49 @@ def _assert_repr_summary_fixture() -> _ReprAsserter:
     information followed by a summary matching the specific pattern passed.
     """
     return _ReprAsserter()
+
+
+@attrs.frozen
+class _MockLockFixture:
+    """A mock lock factory and Hook that uses it, for the mock_lock fixture."""
+
+    # pylint: disable=too-few-public-methods  # This is an attrs data class.
+
+    lock_factory: Mock
+    """The mock lock (mutex). This does not do any real locking."""
+
+    hook: Hook
+    """The Hook instance that was created using the mock lock."""
+
+
+@enum.unique
+class Scope(enum.Enum):
+    """Ways to supply a mock lock to a Hook: pass locally or patch globally."""
+
+    LOCAL = enum.auto()
+    """Pass locally."""
+
+    GLOBAL = enum.auto()
+    """Patch globally."""
+
+
+@pytest.fixture(name='mock_lock', params=[Scope.LOCAL, Scope.GLOBAL])
+def _mock_lock_fixture(
+    request: FixtureRequest, mocker: MockerFixture,
+) -> Generator[_MockLockFixture, None, None]:
+    """A Hook created with its lock mocked (pytest fixture)."""
+    lock_factory = mocker.MagicMock(threading.Lock)
+
+    if request.param is Scope.LOCAL:
+        hook = Hook(sub_lock_factory=lock_factory)
+    elif request.param is Scope.GLOBAL:
+        mocker.patch('threading.Lock', lock_factory)
+        hook = Hook()
+    else:
+        # We've exhausted the enumeration, so the "scope" is the wrong type.
+        raise TypeError('scope must be a Scope (one of LOCAL or GLOBAL)')
+
+    yield _MockLockFixture(lock_factory=lock_factory, hook=hook)
 
 
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
@@ -1035,8 +1083,99 @@ def test_repr_uses_derived_class_type_name(
     )
 
 
-# FIXME: Test default mutual exclusion behavior and the sub_lock_factory
-#        keyword-only argument.
+def test_lock_constructed_immediately(mock_lock: _MockLockFixture) -> None:
+    """When a Hook is constructed, it calls its lock factory."""
+    mock_lock.lock_factory.assert_called_once_with()
+
+
+def test_lock_not_entered_immediately(mock_lock: _MockLockFixture) -> None:
+    """When a Hook is constructed, it does not actually enter the lock."""
+    mock_lock.lock_factory().__enter__.assert_not_called()
+
+
+def test_subscribe_enters_and_exits_lock(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    mock_lock.hook.subscribe(event, listener)
+    calls = mock_lock.lock_factory().mock_calls
+
+    # pylint: disable=unnecessary-dunder-call  # Not really entering/exiting.
+    assert calls == [call.__enter__(), call.__exit__(None, None, None)]
+
+
+def test_unsubscribe_enters_and_exits_lock(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    mock_lock.hook.subscribe(event, listener)  # So that we can unsubscribe it.
+    mock_lock.lock_factory().reset_mock()  # To only see calls via unsubscribe.
+    mock_lock.hook.unsubscribe(event, listener)
+    calls = mock_lock.lock_factory().mock_calls
+
+    # pylint: disable=unnecessary-dunder-call  # Not really entering/exiting.
+    assert calls == [call.__enter__(), call.__exit__(None, None, None)]
+
+
+def test_subscribe_never_calls_acquire(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    """The lock context manager is not required to have an acquire method."""
+    mock_lock.hook.subscribe(event, listener)
+    mock_lock.lock_factory().acquire.assert_not_called()
+
+
+def test_subscribe_never_calls_release(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    """The lock context manager is not required to have a release method."""
+    mock_lock.hook.subscribe(event, listener)
+    mock_lock.lock_factory().release.assert_not_called()
+
+
+def test_unsubscribe_never_calls_acquire(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    """The lock context manager is not required to have an acquire method."""
+    mock_lock.hook.subscribe(event, listener)  # So that we can unsubscribe it.
+    mock_lock.lock_factory().reset_mock()  # To only see calls via unsubscribe.
+    mock_lock.hook.unsubscribe(event, listener)
+    mock_lock.lock_factory().acquire.assert_not_called()
+
+
+def test_unsubscribe_never_calls_release(
+    mock_lock: _MockLockFixture, event: str, listener: _MockListener,
+) -> None:
+    """The lock context manager is not required to have a release method."""
+    mock_lock.hook.subscribe(event, listener)  # So that we can unsubscribe it.
+    mock_lock.lock_factory().reset_mock()  # To only see calls via unsubscribe.
+    mock_lock.hook.unsubscribe(event, listener)
+    mock_lock.lock_factory().release.assert_not_called()
+
+
+def test_lock_can_be_nullcontext(
+    maybe_raise: Callable[[], None], event: str, listener: _MockListener,
+) -> None:
+    """
+    A hook with contextlib.nullcontext as its lock factory works for listening.
+
+    This test case repeats test_listening_observes_only_between_enter_and_exit
+    but constructs the hook with contextlib.nullcontext as its lock factory for
+    subscribing and unsubscribing, as a simple but nontrivial nullcontext test.
+    """
+    hook = Hook(sub_lock_factory=contextlib.nullcontext)
+
+    subaudit.audit(event, 'a')
+    subaudit.audit(event, 'b', 'c')
+
+    with contextlib.suppress(_FakeError):
+        with hook.listening(event, listener):
+            subaudit.audit(event, 'd')
+            subaudit.audit(event, 'e', 'f')
+            maybe_raise()
+
+    subaudit.audit(event, 'g')
+    subaudit.audit(event, 'h', 'i')
+
+    assert listener.mock_calls == [call('d'), call('e', 'f')]
 
 
 # FIXME: Test the top-level stuff for the global Hook instance. *Most* of this
