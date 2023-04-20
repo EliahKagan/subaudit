@@ -4,6 +4,7 @@
 
 import contextlib
 import functools
+import re
 import sys
 from typing import (
     Any,
@@ -284,8 +285,23 @@ class _MockExtractor(_MockLike, Protocol):
 
 @pytest.fixture(name='extractor')
 def _extractor_fixture() -> _MockExtractor:
-    """Mock extractor. Returns a tuple of its arguments. (Pytest fixture.)"""
+    """Mock extractor (pytest fixture). Returns a tuple of its arguments."""
     return Mock(wraps=_Extract.from_separate_args)
+
+
+@pytest.fixture(name='assert_repr_summary')
+def _assert_repr_summary_fixture() -> Callable[[Hook, str], None]:
+    """
+    Function to assert a hook has a correct repr (pytest fixture).
+
+    The repr is asserted to be in the non-code style, containing general
+    information followed by a summary matching the specific pattern passed.
+    """
+    def assert_repr_summary(hook: Hook, summary_pattern: str) -> None:
+        pattern = rf'<Hook at 0x[0-9a-fA-F]+: {summary_pattern}>'
+        assert re.fullmatch(pattern, repr(hook))
+
+    return assert_repr_summary
 
 
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
@@ -917,7 +933,81 @@ def test_extracting_delegates_to_listening(
                 assert listening_calls == subscribe_calls
 
 
-# FIXME: Test repr.
+def test_repr_shows_hook_not_installed_on_creation(
+    hook: Hook, assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    """A new Hook's repr has general info and the not-installed summary."""
+    assert_repr_summary(hook, r'audit hook not installed')
+
+
+def test_repr_shows_one_event_while_listening(
+    hook: Hook,
+    event: str,
+    listener: _MockListener,
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    with hook.listening(event, listener):
+        assert_repr_summary(hook, r'watching 1 event')
+
+
+def test_repr_shows_no_events_after_done_listening(
+    hook: Hook,
+    event: str,
+    listener: _MockListener,
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    with hook.listening(event, listener):
+        pass
+    assert_repr_summary(hook, r'watching 0 events')
+
+def test_repr_shows_both_events_when_nested_listening(
+    hook: Hook,
+    make_events: _MultiSupplier[str],
+    listener: _MockListener,
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    event1, event2 = make_events(2)
+    with hook.listening(event1, listener):
+        with hook.listening(event2, listener):
+            assert_repr_summary(hook, r'watching 2 events')
+
+
+def test_repr_shows_one_event_after_done_listening_to_second(
+    hook: Hook,
+    make_events: _MultiSupplier[str],
+    listener: _MockListener,
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    event1, event2 = make_events(2)
+    with hook.listening(event1, listener):
+        with hook.listening(event2, listener):
+            pass
+        assert_repr_summary(hook, r'watching 1 event')
+
+
+def test_repr_shows_no_events_after_done_nested_listening(
+    hook: Hook,
+    make_events: _MultiSupplier[str],
+    listener: _MockListener,
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    event1, event2 = make_events(2)
+    with hook.listening(event1, listener):
+        with hook.listening(event2, listener):
+            pass
+    assert_repr_summary(hook, r'watching 0 events')
+
+
+def test_repr_shows_one_event_with_multiple_listeners_as_one(
+    hook: Hook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
+    assert_repr_summary: Callable[[Hook, str], None],
+) -> None:
+    listener1, listener2 = make_listeners(2)
+    with hook.listening(event, listener1):
+        with hook.listening(event, listener2):
+            assert_repr_summary(hook, r'watching 1 event')
 
 
 # FIXME: Test default mutual exclusion behavior and the sub_lock_factory
