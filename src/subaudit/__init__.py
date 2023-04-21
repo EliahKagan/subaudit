@@ -135,7 +135,7 @@ class Hook:
             except KeyError:
                 self._fail_unsubscribe(event, listener)
 
-            # We search in reverse, to remove the latest matching listener.
+            # Search in reverse, to remove the most recent matching listener.
             listeners_reversed = list(reversed(listeners))
             try:
                 listeners_reversed.remove(listener)
