@@ -46,8 +46,11 @@ from typing_extensions import Protocol, Self
 import subaudit
 from subaudit import Hook
 
+_R = TypeVar('_R')
+"""Function-level output type variable."""
+
 _R_co = TypeVar('_R_co', covariant=True)
-"""Output type variable."""
+"""Class-level output type variable (covariant)."""
 
 
 class _FakeError(Exception):
@@ -86,6 +89,59 @@ class _MultiSupplier(Generic[_R_co]):
     def __call__(self, count: int) -> Tuple[_R_co, ...]:
         """Make the specific number (count) of things."""
         return tuple(self._supplier() for _ in range(count))
+
+
+class _AnyHook(Protocol):
+    """Protocol for the Hook interface."""
+
+    __slots__ = ()
+
+    def subscribe(self, event: str, listener: Callable[..., None]) -> None: ...
+
+    def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
+        ...
+
+    def listening(
+        self, event: str, listener: Callable[..., None],
+    ) -> contextlib.AbstractContextManager[None]: ...
+
+    def extracting(
+        self, event: str, extractor: Callable[..., _R],
+    ) -> contextlib.AbstractContextManager[List[_R]]: ...
+
+
+@enum.unique
+class TopLevel(enum.Enum):
+    """
+    Singleton that collects top-level Hook functions from the subaudit modules.
+
+    This is so the tests of those functions don't depend on them being instance
+    methods, which may change. (They may delegate to instance methods in the
+    future. We would lose __self__, but they could have their own docstrings.)
+    Otherwise, we would just access __self__ on one of them and use that Hook.
+    """
+
+    FUNCTIONS = enum.auto()
+
+    def subscribe(self, event: str, listener: Callable[..., None]) -> None:
+        """Call the top-level subscribe."""
+        return subaudit.subscribe(event, listener)
+
+    def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
+        """Call the top-level unsubscribe."""
+        return subaudit.unsubscribe(event, listener)
+
+    def listening(
+        self, event: str, listener: Callable[..., None],
+    ) -> contextlib.AbstractContextManager[None]:
+        """Call the top-level listening."""
+        return subaudit.listening(event, listener)
+
+    def extracting(
+        self, event: str, extractor: Callable[..., _R],
+    ) -> contextlib.AbstractContextManager[List[_R]]:
+        """Call the top-level extracting."""
+        return subaudit.extracting(event, extractor)
 
 
 def _make_hook() -> Hook:
