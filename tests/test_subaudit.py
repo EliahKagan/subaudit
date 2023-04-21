@@ -1246,17 +1246,25 @@ def test_unsubscribe_never_calls_release(
     mock_lock.lock_factory().release.assert_not_called()
 
 
-def test_lock_can_be_nullcontext(
-    maybe_raise: Callable[[], None], event: str, listener: _MockListener,
+@pytest.mark.parametrize('cm_factory', [
+    contextlib.nullcontext,
+    threading.Lock,
+    threading.RLock,
+])
+def test_lock_accepts_common_cm(
+    cm_factory: subaudit.ContextManagerFactory,
+    maybe_raise: Callable[[], None],
+    event: str,
+    listener: _MockListener,
 ) -> None:
     """
-    A hook with contextlib.nullcontext as its lock factory works for listening.
+    A hook with a lock or nullcontext as its lock factory works for listening.
 
-    This test case repeats test_listening_observes_only_between_enter_and_exit
-    but constructs the hook with contextlib.nullcontext as its lock factory for
-    subscribing and unsubscribing, as a simple but nontrivial nullcontext test.
+    This is test_listening_observes_only_between_enter_and_exit, but creating
+    the Hook with contextlib.nullcontext, Lock, or RLock as its lock factory
+    for subscribing and unsubscribing, as a simple but nontrivial check.
     """
-    hook = Hook(sub_lock_factory=contextlib.nullcontext)
+    hook = Hook(sub_lock_factory=cm_factory)
 
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
@@ -1271,6 +1279,12 @@ def test_lock_can_be_nullcontext(
     subaudit.audit(event, 'h', 'i')
 
     assert listener.mock_calls == [call('d'), call('e', 'f')]
+
+
+def test_sub_lock_factory_is_keyword_only() -> None:
+    with pytest.raises(TypeError):
+        # pylint: disable=too-many-function-args  # We are testing that error.
+        Hook(threading.Lock)  # type: ignore[misc]
 
 
 # FIXME: Write the rest of the tests of the top-level stuff for the global Hook
