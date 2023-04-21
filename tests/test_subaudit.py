@@ -111,6 +111,8 @@ def _make_hooks_fixture() -> _MultiSupplier[Hook]:
 class _AnyHook(Protocol):
     """Protocol for the Hook interface."""
 
+    # pylint: disable=missing-function-docstring  # This is a protocol.
+
     __slots__ = ()
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None: ...
@@ -495,45 +497,51 @@ def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
 
 
 def test_subscribed_listener_observes_event(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    hook.subscribe(event, listener)
+    any_hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_called_once_with('a', 'b', 'c')
 
 
 def test_unsubscribed_listener_does_not_observe_event(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    hook.subscribe(event, listener)
-    hook.unsubscribe(event, listener)
+    any_hook.subscribe(event, listener)
+    any_hook.unsubscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_not_called()
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-    hook: Hook, make_events: _MultiSupplier[str], listener: _MockListener,
+    any_hook: _AnyHook,
+    make_events: _MultiSupplier[str],
+    listener: _MockListener,
 ) -> None:
     """Subscribing to one event doesn't observe other events."""
     event1, event2 = make_events(2)
-    hook.subscribe(event1, listener)
+    any_hook.subscribe(event1, listener)
     subaudit.audit(event2, 'a', 'b', 'c')
     listener.assert_not_called()
 
 
 def test_listener_can_subscribe_multiple_events(
-    hook: Hook, make_events: _MultiSupplier[str], listener: _MockListener,
+    any_hook: _AnyHook,
+    make_events: _MultiSupplier[str],
+    listener: _MockListener,
 ) -> None:
     event1, event2 = make_events(2)
-    hook.subscribe(event1, listener)
-    hook.subscribe(event2, listener)
+    any_hook.subscribe(event1, listener)
+    any_hook.subscribe(event2, listener)
     subaudit.audit(event1, 'a', 'b', 'c')
     subaudit.audit(event2, 'd', 'e')
     assert listener.mock_calls == [call('a', 'b', 'c'), call('d', 'e')]
 
 
 def test_listeners_called_in_subscribe_order(
-    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
+    any_hook: _AnyHook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3 = make_listeners(3)
@@ -541,16 +549,18 @@ def test_listeners_called_in_subscribe_order(
     listener2.side_effect = functools.partial(ordering.append, 2)
     listener3.side_effect = functools.partial(ordering.append, 3)
 
-    hook.subscribe(event, listener1)
-    hook.subscribe(event, listener2)
-    hook.subscribe(event, listener3)
+    any_hook.subscribe(event, listener1)
+    any_hook.subscribe(event, listener2)
+    any_hook.subscribe(event, listener3)
     subaudit.audit(event)
 
     assert ordering == [1, 2, 3]
 
 
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
-    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
+    any_hook: _AnyHook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3, listener4 = make_listeners(4)
@@ -559,69 +569,71 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
     listener3.side_effect = functools.partial(ordering.append, 3)
     listener4.side_effect = functools.partial(ordering.append, 4)
 
-    hook.subscribe(event, listener1)
-    hook.subscribe(event, listener2)
-    hook.subscribe(event, listener3)
-    hook.subscribe(event, listener4)
-    hook.unsubscribe(event, listener1)
-    hook.unsubscribe(event, listener3)
+    any_hook.subscribe(event, listener1)
+    any_hook.subscribe(event, listener2)
+    any_hook.subscribe(event, listener3)
+    any_hook.subscribe(event, listener4)
+    any_hook.unsubscribe(event, listener1)
+    any_hook.unsubscribe(event, listener3)
     subaudit.audit(event)
 
     assert ordering == [2, 4]
 
 
 def test_listeners_called_in_new_order_after_resubscribe(
-    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
+    any_hook: _AnyHook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2 = make_listeners(2)
     listener1.side_effect = functools.partial(ordering.append, 1)
     listener2.side_effect = functools.partial(ordering.append, 2)
 
-    hook.subscribe(event, listener1)
-    hook.subscribe(event, listener2)
-    hook.unsubscribe(event, listener1)
-    hook.subscribe(event, listener1)
+    any_hook.subscribe(event, listener1)
+    any_hook.subscribe(event, listener2)
+    any_hook.unsubscribe(event, listener1)
+    any_hook.subscribe(event, listener1)
     subaudit.audit(event)
 
     assert ordering == [2, 1]
 
 
 def test_cannot_unsubscribe_if_never_subscribed(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     with pytest.raises(ValueError):
-        hook.unsubscribe(event, listener)
+        any_hook.unsubscribe(event, listener)
 
 
 def test_cannot_unsubscribe_if_no_longer_subscribed(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    hook.subscribe(event, listener)
-    hook.unsubscribe(event, listener)
+    any_hook.subscribe(event, listener)
+    any_hook.unsubscribe(event, listener)
     with pytest.raises(ValueError):
-        hook.unsubscribe(event, listener)
+        any_hook.unsubscribe(event, listener)
 
 
 @pytest.mark.parametrize('count', [0, 2, 3, 10])
 def test_listener_observes_event_as_many_times_as_subscribed(
-    count: int, hook: Hook, event: str, listener: _MockListener,
+    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
-        hook.subscribe(event, listener)
+        any_hook.subscribe(event, listener)
     subaudit.audit(event)
     assert listener.call_count == count
 
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_can_unsubscribe_as_many_times_as_subscribed(
-    count: int, hook: Hook, event: str, listener: _MockListener,
+    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
-        hook.subscribe(event, listener)
+        any_hook.subscribe(event, listener)
     try:
         for _ in range(count):
-            hook.subscribe(event, listener)
+            any_hook.subscribe(event, listener)
     except ValueError as error:
         pytest.fail(
             f"Couldn't subscribe then unsubscribe {count} times: {error!r}")
@@ -629,47 +641,49 @@ def test_can_unsubscribe_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_cannot_unsubscribe_more_times_than_subscribed(
-    count: int, hook: Hook, event: str, listener: _MockListener,
+    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
-        hook.subscribe(event, listener)
+        any_hook.subscribe(event, listener)
     with pytest.raises(ValueError):
         for _ in range(count + 1):
-            hook.unsubscribe(event, listener)
+            any_hook.unsubscribe(event, listener)
 
 
 def test_unsubscribe_keeps_other_listener(
-    hook: Hook, event: str, make_listeners: _MultiSupplier[_MockListener],
+    any_hook: _AnyHook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
     listener1, listener2 = make_listeners(2)
-    hook.subscribe(event, listener1)
-    hook.subscribe(event, listener2)
-    hook.unsubscribe(event, listener1)
+    any_hook.subscribe(event, listener1)
+    any_hook.subscribe(event, listener2)
+    any_hook.unsubscribe(event, listener1)
     subaudit.audit(event, 'a', 'b', 'c')
     listener2.assert_called_once_with('a', 'b', 'c')
 
 
 def test_unsubscribe_removes_last_equal_listener(
-    hook: Hook, event: str, equal_listeners: Tuple[_MockListener, ...],
+    any_hook: _AnyHook, event: str, equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
     for listener in equal_listeners:
-        hook.subscribe(event, listener)
-    hook.unsubscribe(event, equal_listeners[0])
+        any_hook.subscribe(event, listener)
+    any_hook.unsubscribe(event, equal_listeners[0])
     subaudit.audit(event, 'a', 'b', 'c')
     equal_listeners[-1].assert_not_called()
 
 
 def test_unsubscribe_keeps_non_last_equal_listeners(
     subtests: SubTests,
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
     """Unsubscribing removes no equal listeners besides the last subscribed."""
     for listener in equal_listeners:
-        hook.subscribe(event, listener)
-    hook.unsubscribe(event, equal_listeners[0])
+        any_hook.subscribe(event, listener)
+    any_hook.unsubscribe(event, equal_listeners[0])
     subaudit.audit(event, 'a', 'b', 'c')
 
     for index, listener in enumerate(equal_listeners[:-1]):
@@ -734,10 +748,10 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
 
 
 def test_listening_does_not_observe_before_enter(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """The call to listening does not itself subscribe."""
-    context_manager = hook.listening(event, listener)
+    context_manager = any_hook.listening(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     with context_manager:
         pass
@@ -752,10 +766,10 @@ def test_listening_does_not_call_subscribe_before_enter(
 
 
 def test_listening_observes_between_enter_and_exit(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """In the block of a with statement, the listener is subscribed."""
-    with hook.listening(event, listener):
+    with any_hook.listening(event, listener):
         subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_called_once_with('a', 'b', 'c')
 
@@ -774,13 +788,13 @@ def test_listening_enter_calls_subscribe(
 
 def test_listening_does_not_observe_after_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     listener: _MockListener,
 ) -> None:
     """After exiting the with statement, the listener is not subscribed."""
     with contextlib.suppress(_FakeError):
-        with hook.listening(event, listener):
+        with any_hook.listening(event, listener):
             maybe_raise()
     subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_not_called()
@@ -810,7 +824,7 @@ def test_listening_exit_calls_unsubscribe(
 
 def test_listening_observes_only_between_enter_and_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -819,7 +833,7 @@ def test_listening_observes_only_between_enter_and_exit(
     subaudit.audit(event, 'b', 'c')
 
     with contextlib.suppress(_FakeError):
-        with hook.listening(event, listener):
+        with any_hook.listening(event, listener):
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
             maybe_raise()
@@ -831,18 +845,18 @@ def test_listening_observes_only_between_enter_and_exit(
 
 
 def test_listening_enter_returns_none(
-    hook: Hook, event: str, listener: _MockListener,
+    any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """The listening context manager isn't meant to be used with "as"."""
-    with hook.listening(event, listener) as context:
+    with any_hook.listening(event, listener) as context:
         pass
     assert context is None
 
 
 def test_extracting_does_not_observe_before_enter(
-    hook: Hook, event: str, extractor: _MockExtractor,
+    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
-    context_manager = hook.extracting(event, extractor)
+    context_manager = any_hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
     with context_manager:
         pass
@@ -850,9 +864,9 @@ def test_extracting_does_not_observe_before_enter(
 
 
 def test_extracting_does_not_extract_before_enter(
-    hook: Hook, event: str, extractor: _MockExtractor,
+    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
-    context_manager = hook.extracting(event, extractor)
+    context_manager = any_hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
     with context_manager as extracts:
         pass
@@ -867,17 +881,17 @@ def test_extracting_does_not_call_subscribe_before_enter(
 
 
 def test_extracting_observes_between_enter_and_exit(
-    hook: Hook, event: str, extractor: _MockExtractor,
+    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
-    with hook.extracting(event, extractor):
+    with any_hook.extracting(event, extractor):
         subaudit.audit(event, 'a', 'b', 'c')
     extractor.assert_called_once_with('a', 'b', 'c')
 
 
 def test_extracting_extracts_between_enter_and_exit(
-    hook: Hook, event: str, extractor: _MockExtractor,
+    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
-    with hook.extracting(event, extractor) as extracts:
+    with any_hook.extracting(event, extractor) as extracts:
         subaudit.audit(event, 'a', 'b', 'c')
     assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
@@ -918,12 +932,12 @@ def test_extracting_enter_passes_appender_to_subscribe(
 
 def test_extracting_does_not_observe_after_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor):
+        with any_hook.extracting(event, extractor):
             maybe_raise()
     subaudit.audit(event, 'a', 'b', 'c')
     extractor.assert_not_called()
@@ -931,14 +945,14 @@ def test_extracting_does_not_observe_after_exit(
 
 def test_extracting_does_not_extract_after_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
     extracts: Optional[List[_Extract]] = None
 
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor) as extracts:
+        with any_hook.extracting(event, extractor) as extracts:
             maybe_raise()
 
     subaudit.audit(event, 'a', 'b', 'c')
@@ -1002,7 +1016,7 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 
 def test_extracting_observes_only_between_enter_and_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1010,7 +1024,7 @@ def test_extracting_observes_only_between_enter_and_exit(
     subaudit.audit(event, 'b', 'c')
 
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor):
+        with any_hook.extracting(event, extractor):
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
             maybe_raise()
@@ -1023,7 +1037,7 @@ def test_extracting_observes_only_between_enter_and_exit(
 
 def test_extracting_extracts_only_between_enter_and_exit(
     maybe_raise: Callable[[], None],
-    hook: Hook,
+    any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1033,7 +1047,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
     subaudit.audit(event, 'b', 'c')
 
     with contextlib.suppress(_FakeError):
-        with hook.extracting(event, extractor) as extracts:
+        with any_hook.extracting(event, extractor) as extracts:
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
             maybe_raise()
@@ -1259,8 +1273,8 @@ def test_lock_can_be_nullcontext(
     assert listener.mock_calls == [call('d'), call('e', 'f')]
 
 
-# FIXME: Test the top-level stuff for the global Hook instance. *Most* of this
-#        should be achieved by parametrizing test fixures already defined here.
+# FIXME: Write the rest of the tests of the top-level stuff for the global Hook
+#        instance (i.e., the few the any_hook fixture hasn't taken care of).
 
 
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event
