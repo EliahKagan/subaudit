@@ -71,43 +71,6 @@ def _maybe_raise_fixture(request: FixtureRequest) -> Callable[[], None]:
     return maybe_raise_now
 
 
-class _MultiSupplier(Generic[_R_co]):
-    """Adapter of a single-item supplier to produce multiple items."""
-
-    __slots__ = ('_supplier',)
-
-    _supplier: Callable[[], _R_co]
-
-    def __init__(self, supplier: Callable[[], _R_co]) -> None:
-        """Create a maker from the given single-item supplier."""
-        self._supplier = supplier
-
-    def __repr__(self) -> str:
-        """Vaguely code-like representation for debugging."""
-        return f'{type(self).__name__}({self._supplier!r})'
-
-    def __call__(self, count: int) -> Tuple[_R_co, ...]:
-        """Make the specific number (count) of things."""
-        return tuple(self._supplier() for _ in range(count))
-
-
-def _make_hook() -> Hook:
-    """Create a hook instance."""
-    return Hook()
-
-
-@pytest.fixture(name='hook')
-def _hook_fixture() -> Hook:
-    """Hook instance (pytest fixture)."""
-    return _make_hook()
-
-
-@pytest.fixture(name='make_hooks')
-def _make_hooks_fixture() -> _MultiSupplier[Hook]:
-    """Supplier of multiple Hook instances (pytest fixture)."""
-    return _MultiSupplier(_make_hook)
-
-
 class _AnyHook(Protocol):
     """Protocol for the Hook interface."""
 
@@ -174,6 +137,43 @@ def _any_hook(request: FixtureRequest) -> _AnyHook:
     This multiplies tests, covering new instances and module-level functions.
     """
     return request.param()
+
+
+class _MultiSupplier(Generic[_R_co]):
+    """Adapter of a single-item supplier to produce multiple items."""
+
+    __slots__ = ('_supplier',)
+
+    _supplier: Callable[[], _R_co]
+
+    def __init__(self, supplier: Callable[[], _R_co]) -> None:
+        """Create a maker from the given single-item supplier."""
+        self._supplier = supplier
+
+    def __repr__(self) -> str:
+        """Vaguely code-like representation for debugging."""
+        return f'{type(self).__name__}({self._supplier!r})'
+
+    def __call__(self, count: int) -> Tuple[_R_co, ...]:
+        """Make the specific number (count) of things."""
+        return tuple(self._supplier() for _ in range(count))
+
+
+def _make_hook() -> Hook:
+    """Create a hook instance."""
+    return Hook()
+
+
+@pytest.fixture(name='hook')
+def _hook_fixture() -> Hook:
+    """Hook instance (pytest fixture)."""
+    return _make_hook()
+
+
+@pytest.fixture(name='make_hooks')
+def _make_hooks_fixture() -> _MultiSupplier[Hook]:
+    """Supplier of multiple Hook instances (pytest fixture)."""
+    return _MultiSupplier(_make_hook)
 
 
 class _UnboundMethodMock(Mock):
