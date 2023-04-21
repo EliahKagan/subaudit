@@ -62,7 +62,7 @@ def _maybe_raise_fixture(request: FixtureRequest) -> Callable[[], None]:
     """
     Function that either raises _FakeError or do nothing (pytest fixture).
 
-    This multiplies tests that use it, covering raising and non-raising cases.
+    This multiplies tests, covering raising and non-raising cases.
     """
     def maybe_raise_now() -> None:
         if request.param:
@@ -91,6 +91,23 @@ class _MultiSupplier(Generic[_R_co]):
         return tuple(self._supplier() for _ in range(count))
 
 
+def _make_hook() -> Hook:
+    """Create a hook instance."""
+    return Hook()
+
+
+@pytest.fixture(name='hook')
+def _hook_fixture() -> Hook:
+    """Hook instance (pytest fixture)."""
+    return _make_hook()
+
+
+@pytest.fixture(name='make_hooks')
+def _make_hooks_fixture() -> _MultiSupplier[Hook]:
+    """Supplier of multiple Hook instances (pytest fixture)."""
+    return _MultiSupplier(_make_hook)
+
+
 class _AnyHook(Protocol):
     """Protocol for the Hook interface."""
 
@@ -110,10 +127,9 @@ class _AnyHook(Protocol):
     ) -> contextlib.AbstractContextManager[List[_R]]: ...
 
 
-@enum.unique
-class TopLevel(enum.Enum):
+class TopLevel:
     """
-    Singleton that collects top-level Hook functions from the subaudit modules.
+    Test double providing top-level Hook functions from the subaudit modules.
 
     This is so the tests of those functions don't depend on them being instance
     methods, which may change. (They may delegate to instance methods in the
@@ -121,7 +137,11 @@ class TopLevel(enum.Enum):
     Otherwise, we would just access __self__ on one of them and use that Hook.
     """
 
-    FUNCTIONS = enum.auto()
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        """Python code representation."""
+        return f'{type(self).__name__}()'
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Call the top-level subscribe."""
@@ -144,21 +164,14 @@ class TopLevel(enum.Enum):
         return subaudit.extracting(event, extractor)
 
 
-def _make_hook() -> Hook:
-    """Create a hook instance."""
-    return Hook()
+@pytest.fixture(name='any_hook', params=[Hook, TopLevel])
+def _any_hook(request: FixtureRequest) -> _AnyHook:
+    """
+    Hook instance or wrapper for the top-level functions (pytest fixture).
 
-
-@pytest.fixture(name='hook')
-def _hook_fixture() -> Hook:
-    """Hook instance (pytest fixture)."""
-    return _make_hook()
-
-
-@pytest.fixture(name='make_hooks')
-def _make_hooks_fixture() -> _MultiSupplier[Hook]:
-    """Supplier of multiple Hook instances (pytest fixture)."""
-    return _MultiSupplier(_make_hook)
+    This multiplies tests, covering new instances and module-level functions.
+    """
+    return request.param()
 
 
 class _UnboundMethodMock(Mock):
