@@ -21,6 +21,7 @@ import functools
 import re
 import sys
 import threading
+from types import MethodType
 from typing import (
     Any,
     Callable,
@@ -31,6 +32,7 @@ from typing import (
     Sequence,
     Tuple,
     TypeVar,
+    cast,
 )
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
 from unittest.mock import _Call, _CallList, Mock, call
@@ -896,7 +898,7 @@ def test_extracting_extracts_between_enter_and_exit(
     assert extracts == [_Extract(args=('a', 'b', 'c'))]
 
 
-def text_extracting_enter_calls_subscribe_exactly_once(
+def test_extracting_enter_calls_subscribe_exactly_once(
     derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
     with derived_hook.instance.extracting(event, extractor):
@@ -1288,14 +1290,14 @@ def test_sub_lock_factory_is_keyword_only() -> None:
 
 
 @pytest.mark.unstable
-def top_level_functions_are_bound_methods(subtests: SubTests) -> None:
+def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
     """The module-level functions are bound methods of a Hook object."""
-    top_level_functions = [
+    top_level_functions = cast(Sequence[MethodType], [
         subaudit.subscribe,
         subaudit.unsubscribe,
         subaudit.listening,
         subaudit.extracting,
-    ]
+    ])
 
     for func in top_level_functions:
         with subtests.test('bound to a hook', name=func.__name__):
