@@ -1333,17 +1333,20 @@ def test_usable_in_high_churn(
     counts = ChurnCounts(listeners=1000, delta=100, iterations=100)
     all_listeners = make_listeners(count=counts.listeners)
     prng = random.Random(18140838203929040771)
+
+    all_expected_observations: List[List[int]] = []
+    all_observations: List[List[int]] = []
     observations: List[int] = []
-    expected_observations: List[int] = []
 
     for number, listener in enumerate(all_listeners):
         listener.side_effect = functools.partial(observations.append, number)
         hook.subscribe(event, listener)
 
     attached = list(range(counts.listeners))
-    detached: List[int] = []
 
     for _ in range(counts.iterations):
+        detached: List[int] = []
+
         for _ in range(counts.delta):
             number = attached.pop(prng.randrange(len(attached)))
             hook.unsubscribe(event, all_listeners[number])
@@ -1354,10 +1357,12 @@ def test_usable_in_high_churn(
             hook.subscribe(event, all_listeners[number])
             attached.append(number)
 
-        expected_observations.extend(attached)
+        all_expected_observations.append(attached[:])
         subaudit.audit(event)
+        all_observations.append(observations[:])
+        observations.clear()
 
-    assert observations == expected_observations
+    assert all_observations == all_expected_observations
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
