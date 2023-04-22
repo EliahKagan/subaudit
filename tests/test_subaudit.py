@@ -16,6 +16,7 @@
 # TODO: Maybe split this into multiple modules.
 
 import contextlib
+import datetime
 import enum
 import functools
 import random
@@ -40,6 +41,7 @@ from unittest.mock import _Call, _CallList, Mock, call
 import uuid
 
 import attrs
+import clock_timer
 import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
@@ -1344,25 +1346,31 @@ def test_usable_in_high_churn(
 
     attached = list(range(counts.listeners))
 
-    for _ in range(counts.iterations):
-        detached: List[int] = []
+    with clock_timer.ClockLogger() as timer:
+        for _ in range(counts.iterations):
+            detached: List[int] = []
 
-        for _ in range(counts.delta):
-            number = attached.pop(prng.randrange(len(attached)))
-            hook.unsubscribe(event, all_listeners[number])
-            detached.append(number)
+            for _ in range(counts.delta):
+                number = attached.pop(prng.randrange(len(attached)))
+                hook.unsubscribe(event, all_listeners[number])
+                detached.append(number)
 
-        while detached:
-            number = detached.pop(prng.randrange(len(detached)))
-            hook.subscribe(event, all_listeners[number])
-            attached.append(number)
+            while detached:
+                number = detached.pop(prng.randrange(len(detached)))
+                hook.subscribe(event, all_listeners[number])
+                attached.append(number)
 
-        all_expected_observations.append(attached[:])
-        subaudit.audit(event)
-        all_observations.append(observations[:])
-        observations.clear()
+            all_expected_observations.append(attached[:])
+            subaudit.audit(event)
+            all_observations.append(observations[:])
+            observations.clear()
 
-    assert all_observations == all_expected_observations
+    with subtests.test('order of calls to listeners'):
+        assert all_observations == all_expected_observations
+
+    with subtests.test('not excessively slow'):
+        elapsed = datetime.timedelta(seconds=timer.total_elapsed)
+        assert elapsed <= datetime.timedelta(seconds=5)  # Usually much faster.
 
 
 # FIXME: Retest some common cases with audit events from the standard library.

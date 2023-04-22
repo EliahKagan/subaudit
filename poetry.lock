@@ -965,6 +965,21 @@ attrs = ">=19.2.0"
 pytest = ">=7.0"
 
 [[package]]
+name = "python-clock-timer"
+version = "0.4.0"
+description = "Awesome clock_timer created by maycuatroi"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-clock-timer-0.4.0.tar.gz", hash = "sha256:47252a3482de118b9e9093bfad110e3eacf71c84ed632ea407bd28bd6ade2c6e"},
+    {file = "python_clock_timer-0.4.0-py3-none-any.whl", hash = "sha256:7ff77f4ef75694ad99a8147bf13fd7ef0c1c928a9fecd4bc3c0e7105ce2c03c8"},
+]
+
+[package.extras]
+test = ["black", "codecov", "coverage", "flake8", "gitchangelog", "isort", "mkdocs", "mypy", "pytest", "pytest-cov"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -1419,4 +1434,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "6623fe3fad3b78b6fb560eb63af04de98b659fefb5c00f4d38d220f220171f2b"
+content-hash = "9ae637b23114281ae0d489ded307a96150905a4ff19a920fd79909ede1f27524"
