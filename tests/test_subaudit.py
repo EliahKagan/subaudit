@@ -1318,7 +1318,7 @@ def test_usable_with_300_listeners(
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     listener_count = 500
-    listener_delta = 5
+    listener_delta = 100
     iteration_count = 100
 
     all_listeners = make_listeners(listener_count)
