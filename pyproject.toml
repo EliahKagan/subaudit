@@ -43,6 +43,10 @@ build-backend = "poetry.core.masonry.api"
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
+module = "clock_timer"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "pytest_subtests"
 ignore_missing_imports = true
 
