@@ -1314,6 +1314,8 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 class ChurnCounts:
     """Parameters for a churn test. (Helper for test_usable_in_high_churn.)"""
 
+    # pylint: disable=too-few-public-methods  # This is an attrs data class.
+
     listeners: int
     """Total number of listeners."""
 
