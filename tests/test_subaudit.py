@@ -1392,5 +1392,18 @@ def test_skip_if_unavailable_skips_before_3_8() -> None:
         wrapper()
 
 
+@pytest.mark.xfail(
+    sys.version_info < (3, 8),
+    reason='Python < 3.8 lacks PEP 578, so @skip_if_unavailable should skip.',
+    raises=AssertionError,
+    strict=True,
+)
+def test_skip_if_unavailable_does_not_skip_since_3_8() -> None:
+    wrapped = Mock(wraps=lambda: None)
+    wrapper = subaudit.skip_if_unavailable(wrapped)
+    wrapper()
+    wrapped.assert_called_once_with()
+
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__, *sys.argv[1:]]))
