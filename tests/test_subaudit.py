@@ -1308,20 +1308,30 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
         assert len({func.__self__ for func in top_level_functions}) == 1
 
 
-# FIXME: Test that high-throughput usage with ~300 listeners on the same event
-#        remains fast.
+@attrs.frozen
+class ChurnCounts:
+    """Parameters for a churn test. (Helper for test_usable_in_high_churn.)"""
+
+    listeners: int
+    """Total number of listeners."""
+
+    delta: int
+    """Number of listeners unsubscribed and resubscribed per test iteration."""
+
+    iterations: int
+    """Number of test iterations."""
+
+
 @pytest.mark.slow
-def test_usable_with_300_listeners(
+def test_usable_in_high_churn(
     subtests: SubTests,
     hook: Hook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
-    listener_count = 1000
-    listener_delta = 100
-    iteration_count = 100
-
-    all_listeners = make_listeners(listener_count)
+    """~1000 listeners with frequent subscribe/unsubscribe isn't too slow."""
+    counts = ChurnCounts(listeners=1000, delta=100, iterations=100)
+    all_listeners = make_listeners(count=counts.listeners)
     prng = random.Random(18140838203929040771)
     observations: List[int] = []
     expected_observations: List[int] = []
@@ -1330,11 +1340,11 @@ def test_usable_with_300_listeners(
         listener.side_effect = functools.partial(observations.append, number)
         hook.subscribe(event, listener)
 
-    attached = list(range(listener_count))
+    attached = list(range(counts.listeners))
     detached: List[int] = []
 
-    for _ in range(iteration_count):
-        for _ in range(listener_delta):
+    for _ in range(counts.iterations):
+        for _ in range(counts.delta):
             number = attached.pop(prng.randrange(len(attached)))
             hook.unsubscribe(event, all_listeners[number])
             detached.append(number)
