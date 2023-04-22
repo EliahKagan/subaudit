@@ -36,6 +36,7 @@ from typing import (
     TypeVar,
     cast,
 )
+import unittest
 # TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
 from unittest.mock import _Call, _CallList, Mock, call
 import uuid
@@ -459,7 +460,7 @@ def _mock_lock_fixture(
 
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
-    reason='Python 3.8+ has sys.audit',
+    reason='Python 3.8+ has sys.audit.',
     raises=AttributeError,
     strict=True,
 )
@@ -469,7 +470,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
 
 @pytest.mark.xfail(
     sys.version_info >= (3, 8),
-    reason='Python 3.8+ has sys.audit',
+    reason='Python 3.8+ has sys.audit.',
     raises=ImportError,
     strict=True,
 )
@@ -481,7 +482,7 @@ def test_audit_is_sysaudit_audit_before_3_8() -> None:
 
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
-    reason='Python 3.8+ has sys.addaudithook',
+    reason='Python 3.8+ has sys.addaudithook.',
     raises=AttributeError,
     strict=True,
 )
@@ -491,7 +492,7 @@ def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
 
 @pytest.mark.xfail(
     sys.version_info >= (3, 8),
-    reason='Python 3.8+ has sys.addaudithook',
+    reason='Python 3.8+ has sys.addaudithook.',
     raises=ImportError,
     strict=True,
 )
@@ -1378,7 +1379,17 @@ def test_usable_in_high_churn(
 # FIXME: Retest some common cases with audit events from the standard library.
 
 
-# FIXME: Test skip_if_unavailable.
+@pytest.mark.xfail(
+    sys.version_info >= (3, 8),
+    reason='Python 3.8 has PEP 578, so @skip_if_unavailable should not skip.',
+    raises=pytest.fail.Exception,
+    strict=True,
+)
+def test_skip_if_unavailable_skips_before_3_8() -> None:
+    wrapped = Mock(wraps=lambda: None)
+    wrapper = subaudit.skip_if_unavailable(wrapped)
+    with pytest.raises(unittest.SkipTest):
+        wrapper()
 
 
 if __name__ == '__main__':
