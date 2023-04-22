@@ -132,7 +132,7 @@ class TopLevel:
 
 
 @pytest.fixture(name='any_hook', params=[Hook, TopLevel])
-def _any_hook(request: FixtureRequest) -> _AnyHook:
+def _any_hook_fixture(request: FixtureRequest) -> _AnyHook:
     """
     Hook instance or wrapper for the top-level functions (pytest fixture).
 
@@ -211,7 +211,7 @@ class _DerivedHookFixture:
 
 
 @pytest.fixture(name='derived_hook')
-def _derived_hook() -> _DerivedHookFixture:
+def _derived_hook_fixture() -> _DerivedHookFixture:
     """Make a new Hook subclass with methods mocked (pytest fixture)."""
     subscribe_method = _UnboundMethodMock(wraps=Hook.subscribe)
     unsubscribe_method = _UnboundMethodMock(wraps=Hook.unsubscribe)
