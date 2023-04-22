@@ -1365,10 +1365,10 @@ def test_usable_in_high_churn(
             all_observations.append(observations[:])
             observations.clear()
 
-    with subtests.test('order of calls to listeners'):
+    with subtests.test('listener calls in correct order'):
         assert all_observations == all_expected_observations
 
-    with subtests.test('not excessively slow'):
+    with subtests.test('elapsed time not excessive'):
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
         assert elapsed <= datetime.timedelta(seconds=5)  # Usually much faster.
 
