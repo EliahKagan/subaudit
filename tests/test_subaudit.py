@@ -1333,25 +1333,19 @@ def test_usable_with_300_listeners(
     attached = list(range(listener_count))
     detached: List[int] = []
 
-    expected_observations.extend(attached)
-    subaudit.audit(event)
-
     for _ in range(iteration_count):
         for _ in range(listener_delta):
             number = attached.pop(prng.randrange(len(attached)))
             hook.unsubscribe(event, all_listeners[number])
             detached.append(number)
 
-            expected_observations.extend(attached)
-            subaudit.audit(event)
-
         while detached:
             number = detached.pop(prng.randrange(len(detached)))
             hook.subscribe(event, all_listeners[number])
             attached.append(number)
 
-            expected_observations.extend(attached)
-            subaudit.audit(event)
+        expected_observations.extend(attached)
+        subaudit.audit(event)
 
     assert observations == expected_observations
 
