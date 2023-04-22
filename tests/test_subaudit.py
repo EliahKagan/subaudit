@@ -1287,8 +1287,22 @@ def test_sub_lock_factory_is_keyword_only() -> None:
         Hook(threading.Lock)  # type: ignore[misc]
 
 
-# FIXME: Write the rest of the tests of the top-level stuff for the global Hook
-#        instance (i.e., the few the any_hook fixture hasn't taken care of).
+@pytest.mark.unstable
+def top_level_functions_are_bound_methods(subtests: SubTests) -> None:
+    """The module-level functions are bound methods of a Hook object."""
+    top_level_functions = [
+        subaudit.subscribe,
+        subaudit.unsubscribe,
+        subaudit.listening,
+        subaudit.extracting,
+    ]
+
+    for func in top_level_functions:
+        with subtests.test('bound to a hook', name=func.__name__):
+            assert isinstance(func.__self__, Hook)
+
+    with subtests.test('all bound to the same one'):
+        assert len({func.__self__ for func in top_level_functions}) == 1
 
 
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event

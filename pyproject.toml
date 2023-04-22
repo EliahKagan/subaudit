@@ -44,3 +44,8 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "pytest_subtests"
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = [
+    "unstable: mark a test as making a claim that especially likely to change.",
+]
