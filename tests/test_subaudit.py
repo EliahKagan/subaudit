@@ -1309,6 +1309,14 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event
 #        remains fast.
+def test_usable_with_300_listeners(
+    hook: Hook,
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
+) -> None:
+    detached = list(make_listeners(300))
+
+
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
