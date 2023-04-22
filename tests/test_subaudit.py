@@ -18,6 +18,7 @@
 import contextlib
 import enum
 import functools
+import random
 import re
 import sys
 import threading
@@ -1309,25 +1310,50 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
 # FIXME: Test that high-throughput usage with ~300 listeners on the same event
 #        remains fast.
+@pytest.mark.slow
 def test_usable_with_300_listeners(
     subtests: SubTests,
     hook: Hook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
-    count = 300
-    listeners = make_listeners(count)
-    observations = []
-    for index, listener in enumerate(listeners):
-        listener.side_effect = functools.partial(observations.append, index)
+    listener_count = 500
+    listener_delta = 5
+    iteration_count = 100
+
+    all_listeners = make_listeners(listener_count)
+    prng = random.Random(18140838203929040771)
+    observations: List[int] = []
+    expected_observations: List[int] = []
+
+    for number, listener in enumerate(all_listeners):
+        listener.side_effect = functools.partial(observations.append, number)
         hook.subscribe(event, listener)
 
-    with subtests.test('full broadcast'):
-        subaudit.audit(event)
-        assert observations == list(range(count))
+    attached = list(range(listener_count))
+    detached: List[int] = []
 
-    observations.clear()
-    # FIXME: Test churn.
+    expected_observations.extend(attached)
+    subaudit.audit(event)
+
+    for _ in range(iteration_count):
+        for _ in range(listener_delta):
+            number = attached.pop(prng.randrange(len(attached)))
+            hook.unsubscribe(event, all_listeners[number])
+            detached.append(number)
+
+            expected_observations.extend(attached)
+            subaudit.audit(event)
+
+        while detached:
+            number = detached.pop(prng.randrange(len(detached)))
+            hook.subscribe(event, all_listeners[number])
+            attached.append(number)
+
+            expected_observations.extend(attached)
+            subaudit.audit(event)
+
+    assert observations == expected_observations
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
