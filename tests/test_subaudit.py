@@ -1385,7 +1385,7 @@ def test_usable_in_high_churn(
     strict=True,
 )
 def test_can_listen_to_standard_events_for_input(
-    # capfd: CaptureFixture,
+    capfd: CaptureFixture,  # NOTE: Doesn't help with builtins.input/result.
     monkeypatch: MonkeyPatch,
     any_hook: _AnyHook,
     make_listeners: _MultiSupplier[_MockListener],

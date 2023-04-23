@@ -170,9 +170,6 @@ class Hook:
         except KeyError:
             return
 
-        # print(f'{self._table = }')
-        # print(f'{event=}, {args=}', file=sys.stderr)
-
         for listener in listeners:
             listener(*args)
 
