@@ -19,7 +19,8 @@ import contextlib
 import datetime
 import enum
 import functools
-import io
+import os
+import pathlib
 import random
 import re
 import sys
@@ -1385,7 +1386,7 @@ def test_usable_in_high_churn(
     strict=True,
 )
 def test_can_listen_to_standard_events_for_input(
-    capfd: CaptureFixture,  # NOTE: Doesn't help with builtins.input/result.
+    tmp_path: pathlib.Path,
     monkeypatch: MonkeyPatch,
     any_hook: _AnyHook,
     make_listeners: _MultiSupplier[_MockListener],
@@ -1398,6 +1399,8 @@ def test_can_listen_to_standard_events_for_input(
     """
     prompt = 'What... is the airspeed velocity of an unladen swallow? '
     result = 'What do you mean? An African or European swallow?'
+    stdin_path = tmp_path / 'input.txt'
+    stdin_path.write_text(result, encoding='utf-8')
     expected_calls = [call.listen_prompt(prompt), call.listen_result(result)]
 
     parent = Mock()
@@ -1406,10 +1409,11 @@ def test_can_listen_to_standard_events_for_input(
     with any_hook.listening('builtins.input', parent.listen_prompt):
         with any_hook.listening('builtins.input/result', parent.listen_result):
             with monkeypatch.context() as context:
-                context.setattr('sys.stdin', io.StringIO(result))
-                input(prompt)
-                # returned_result = input(prompt)
-                # print(f'{returned_result=}', file=sys.stderr)
+                with open(stdin_path, encoding='utf-8') as file:
+                    context.setattr('sys.stdin', file)
+                    input(prompt)  # NOTE: I don't think this raises the event.
+                    # returned_result = input(prompt)
+                    # print(f'{returned_result=}', file=sys.stderr)
 
     assert parent.mock_calls == expected_calls
 
