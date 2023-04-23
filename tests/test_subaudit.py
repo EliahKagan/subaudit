@@ -19,6 +19,7 @@ import contextlib
 import datetime
 import enum
 import functools
+import io
 import random
 import re
 import sys
@@ -44,7 +45,7 @@ import uuid
 import attrs
 import clock_timer
 import pytest
-from pytest import FixtureRequest
+from pytest import CaptureFixture, FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
@@ -1377,6 +1378,40 @@ def test_usable_in_high_churn(
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
+@pytest.mark.xfail(
+    sys.version_info < (3, 8),
+    reason='Python has no standard audit events before 3.8.',
+    raises=AssertionError,
+    strict=True,
+)
+def test_can_listen_to_standard_events_for_input(
+    # capfd: CaptureFixture,
+    monkeypatch: MonkeyPatch,
+    any_hook: _AnyHook,
+    make_listeners: _MultiSupplier[_MockListener],
+) -> None:
+    """
+    We can listen to the builtins.input and builtins.input/result events.
+
+    See https://docs.python.org/3/library/audit_events.html. We should be able
+    to listen to any event listed there, but these tests only try a select few.
+    """
+    prompt = 'What... is the airspeed velocity of an unladen swallow? '
+    result = 'What do you mean? An African or European swallow?'
+    expected_calls = [call.listen_prompt(prompt), call.listen_result(result)]
+
+    parent = Mock()
+    parent.listen_prompt, parent.listen_result = make_listeners(2)
+
+    with any_hook.listening('builtins.input', parent.listen_prompt):
+        with any_hook.listening('builtins.input/result', parent.listen_result):
+            with monkeypatch.context() as context:
+                context.setattr('sys.stdin', io.StringIO(result))
+                input(prompt)
+                # returned_result = input(prompt)
+                # print(f'{returned_result=}', file=sys.stderr)
+
+    assert parent.mock_calls == expected_calls
 
 
 @pytest.mark.xfail(
