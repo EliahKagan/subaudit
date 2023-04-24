@@ -49,6 +49,7 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
+# FIXME: Type parameter?
 ContextManagerFactory = Callable[[], AbstractContextManager]
 """Type alias for classes or factory functions returning context managers."""
 
@@ -88,7 +89,7 @@ class Hook:
 
     __slots__ = ('_lock', '_hook_installed', '_table')
 
-    _lock: AbstractContextManager
+    _lock: AbstractContextManager  # FIXME: Type parameter?
     """Mutex or other context manager used to protect subscribe/unsubscribe."""
 
     _hook_installed: bool
