@@ -29,6 +29,7 @@ from types import MethodType
 from typing import (
     Any,
     Callable,
+    ContextManager,
     Generator,
     Generic,
     List,
@@ -96,11 +97,11 @@ class _AnyHook(Protocol):
 
     def listening(
         self, event: str, listener: Callable[..., None],
-    ) -> contextlib.AbstractContextManager[None]: ...
+    ) -> ContextManager[None]: ...
 
     def extracting(
         self, event: str, extractor: Callable[..., _R],
-    ) -> contextlib.AbstractContextManager[List[_R]]: ...
+    ) -> ContextManager[List[_R]]: ...
 
 
 class TopLevel:
@@ -129,13 +130,13 @@ class TopLevel:
 
     def listening(
         self, event: str, listener: Callable[..., None],
-    ) -> contextlib.AbstractContextManager[None]:
+    ) -> ContextManager[None]:
         """Call the top-level listening."""
         return subaudit.listening(event, listener)
 
     def extracting(
         self, event: str, extractor: Callable[..., _R],
-    ) -> contextlib.AbstractContextManager[List[_R]]:
+    ) -> ContextManager[List[_R]]:
         """Call the top-level extracting."""
         return subaudit.extracting(event, extractor)
 

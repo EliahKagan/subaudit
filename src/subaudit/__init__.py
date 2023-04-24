@@ -25,12 +25,13 @@ __all__ = [
     'skip_if_unavailable',
 ]
 
-from contextlib import AbstractContextManager, contextmanager
+import contextlib
 import sys
 import threading
 from typing import (
     Any,
     Callable,
+    ContextManager,
     Generator,
     List,
     MutableMapping,
@@ -49,7 +50,7 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
-ContextManagerFactory = Callable[[], AbstractContextManager]
+ContextManagerFactory = Callable[[], ContextManager]  # FIXME: Type parameter?
 """Type alias for classes or factory functions returning context managers."""
 
 
@@ -88,7 +89,7 @@ class Hook:
 
     __slots__ = ('_lock', '_hook_installed', '_table')
 
-    _lock: AbstractContextManager
+    _lock: ContextManager  # FIXME: Type parameter?
     """Mutex or other context manager used to protect subscribe/unsubscribe."""
 
     _hook_installed: bool
@@ -149,13 +150,13 @@ class Hook:
 
     def listening(
         self, event: str, listener: Callable[..., None],
-    ) -> AbstractContextManager[None]:
+    ) -> ContextManager[None]:
         """Context manager to subscribe and unsubscribe an event listener."""
         return self._make_listening(event, listener)
 
     def extracting(
         self, event: str, extractor: Callable[..., _R],
-    ) -> AbstractContextManager[List[_R]]:
+    ) -> ContextManager[List[_R]]:
         """Context manager to provide a list of custom-extracted event data."""
         return self._make_extracting(event, extractor)
 
@@ -194,7 +195,7 @@ class Hook:
         """Raise an error for an unsuccessful attempt to detach a listener."""
         raise ValueError(f'{event!r} listener {listener!r} never subscribed')
 
-    @contextmanager
+    @contextlib.contextmanager
     def _make_listening(
         self, event: str, listener: Callable[..., None],
     ) -> Generator[None, None, None]:
@@ -211,7 +212,7 @@ class Hook:
         finally:
             self.unsubscribe(event, listener)
 
-    @contextmanager
+    @contextlib.contextmanager
     def _make_extracting(
         self, event: str, extractor: Callable[..., _R],
     ) -> Generator[List[_R], None, None]:
