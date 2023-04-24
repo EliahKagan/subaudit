@@ -60,6 +60,9 @@ _R = TypeVar('_R')
 _R_co = TypeVar('_R_co', covariant=True)
 """Class-level output type variable (covariant)."""
 
+_STDIN_FILENO = 0
+"""File descriptor of real standard input."""
+
 
 class _FakeError(Exception):
     """Fake exception for testing."""
@@ -1386,8 +1389,8 @@ def test_usable_in_high_churn(
     strict=True,
 )
 def test_can_listen_to_standard_events_for_input(
-    tmp_path: pathlib.Path,
     monkeypatch: MonkeyPatch,
+    tmp_path: pathlib.Path,
     any_hook: _AnyHook,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -1403,17 +1406,29 @@ def test_can_listen_to_standard_events_for_input(
     stdin_path.write_text(result, encoding='utf-8')
     expected_calls = [call.listen_prompt(prompt), call.listen_result(result)]
 
-    parent = Mock()
+    parent = Mock()  # To assert the relative order of calls to child mocks.
     parent.listen_prompt, parent.listen_result = make_listeners(2)
 
     with any_hook.listening('builtins.input', parent.listen_prompt):
         with any_hook.listening('builtins.input/result', parent.listen_result):
-            with monkeypatch.context() as context:
+            # FIXME: If this works, extract arrange/cleanup to a fixture.
+            old_stdin_fd = os.dup(0)
+            os.close(0)
+            try:
                 with open(stdin_path, encoding='utf-8') as file:
-                    context.setattr('sys.stdin', file)
-                    input(prompt)  # NOTE: I don't think this raises the event.
-                    # returned_result = input(prompt)
-                    # print(f'{returned_result=}', file=sys.stderr)
+                    if file.fileno() != _STDIN_FILENO:
+                        raise RuntimeError(
+                            f'got fd {file.fileno()}, need {_STDIN_FILENO}')
+                    with monkeypatch.context() as context:
+                        context.setattr('sys.stdin', file)
+                        returned_result = input(prompt)
+            finally:
+                os.dup2(old_stdin_fd, _STDIN_FILENO)
+                os.close(old_stdin_fd)
+
+            if returned_result != result:
+                raise RuntimeError(
+                    f'got input {returned_result!r}, need {result!r}')
 
     assert parent.mock_calls == expected_calls
 
