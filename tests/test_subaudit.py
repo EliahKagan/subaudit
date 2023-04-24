@@ -47,7 +47,7 @@ import uuid
 import attrs
 import clock_timer
 import pytest
-from pytest import CaptureFixture, FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
