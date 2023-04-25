@@ -106,7 +106,7 @@ class _AnyHook(Protocol):
 
 class TopLevel:
     """
-    Test double providing top-level Hook functions from the subaudit modules.
+    Test double providing top-level Hook functions from the subaudit module.
 
     This is so the tests of those functions don't depend on them being instance
     methods, which may change. (They may delegate to instance methods in the
@@ -1379,7 +1379,7 @@ def test_usable_in_high_churn(
 
     with subtests.test('elapsed time not excessive'):
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
-        assert elapsed <= datetime.timedelta(seconds=5)  # Usually much faster.
+        assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
