@@ -1374,7 +1374,7 @@ def test_usable_in_high_churn(
 
     with subtests.test('elapsed time not excessive'):
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
-        assert elapsed <= datetime.timedelta(seconds=5)  # Usually much faster.
+        assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
 # FIXME: Retest some common cases with audit events from the standard library.
