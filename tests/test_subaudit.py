@@ -19,8 +19,7 @@ import contextlib
 import datetime
 import enum
 import functools
-import os
-import pathlib
+import io
 import random
 import re
 import sys
@@ -47,7 +46,6 @@ import uuid
 import attrs
 import clock_timer
 import pytest
-from pytest import FixtureRequest, MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
@@ -70,7 +68,7 @@ class _FakeError(Exception):
 
 
 @pytest.fixture(name='maybe_raise', params=[False, True])
-def _maybe_raise_fixture(request: FixtureRequest) -> Callable[[], None]:
+def _maybe_raise_fixture(request: pytest.FixtureRequest) -> Callable[[], None]:
     """
     Function that either raises _FakeError or do nothing (pytest fixture).
 
@@ -142,7 +140,7 @@ class TopLevel:
 
 
 @pytest.fixture(name='any_hook', params=[Hook, TopLevel])
-def _any_hook_fixture(request: FixtureRequest) -> _AnyHook:
+def _any_hook_fixture(request: pytest.FixtureRequest) -> _AnyHook:
     """
     Hook instance or wrapper for the top-level functions (pytest fixture).
 
@@ -335,7 +333,7 @@ def _make_listeners_fixture() -> _MultiSupplier[_MockListener]:
 
 @pytest.fixture(name='equal_listeners', params=[2, 3, 5])
 def _equal_listeners_fixture(
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
 ) -> Tuple[_MockListener, ...]:
     """Listeners that are different objects but all equal (pytest fixture)."""
     group_key = object()
@@ -444,7 +442,7 @@ class Scope(enum.Enum):
 
 @pytest.fixture(name='mock_lock', params=[Scope.LOCAL, Scope.GLOBAL])
 def _mock_lock_fixture(
-    request: FixtureRequest, mocker: MockerFixture,
+    request: pytest.FixtureRequest, mocker: MockerFixture,
 ) -> Generator[_MockLockFixture, None, None]:
     """A Hook created with its lock mocked (pytest fixture)."""
     lock_factory = mocker.MagicMock(threading.Lock)
@@ -1390,8 +1388,8 @@ def test_usable_in_high_churn(
     strict=True,
 )
 def test_can_listen_to_standard_events_for_input(
-    monkeypatch: MonkeyPatch,
-    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
     any_hook: _AnyHook,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -1403,8 +1401,6 @@ def test_can_listen_to_standard_events_for_input(
     """
     prompt = 'What... is the airspeed velocity of an unladen swallow? '
     result = 'What do you mean? An African or European swallow?'
-    stdin_path = tmp_path / 'input.txt'
-    stdin_path.write_text(result, encoding='utf-8')
     expected_calls = [call.listen_prompt(prompt), call.listen_result(result)]
 
     parent = Mock()  # To assert the relative order of calls to child mocks.
@@ -1412,24 +1408,13 @@ def test_can_listen_to_standard_events_for_input(
 
     with any_hook.listening('builtins.input', parent.listen_prompt):
         with any_hook.listening('builtins.input/result', parent.listen_result):
-            # FIXME: If this works, extract arrange/cleanup to a fixture.
-            old_stdin_fd = os.dup(0)
-            os.close(0)
-            try:
-                with open(stdin_path, encoding='utf-8') as file:
-                    if file.fileno() != _STDIN_FILENO:
-                        raise RuntimeError(
-                            f'got fd {file.fileno()}, need {_STDIN_FILENO}')
-                    with monkeypatch.context() as context:
-                        context.setattr('sys.stdin', file)
-                        returned_result = input(prompt)
-            finally:
-                os.dup2(old_stdin_fd, _STDIN_FILENO)
-                os.close(old_stdin_fd)
+            with monkeypatch.context() as context:
+                # FIXME: Use the 3-argument form for context.setattr.
+                context.setattr('sys.stdin', io.StringIO(result))
+                returned_result = input(prompt)
 
-            if returned_result != result:
-                raise RuntimeError(
-                    f'got input {returned_result!r}, need {result!r}')
+    if returned_result != result:
+        raise RuntimeError(f'got input {returned_result!r}, need {result!r}')
 
     assert parent.mock_calls == expected_calls
 
