@@ -101,7 +101,7 @@ class _AnyHook(Protocol):
 
 class TopLevel:
     """
-    Test double providing top-level Hook functions from the subaudit modules.
+    Test double providing top-level Hook functions from the subaudit module.
 
     This is so the tests of those functions don't depend on them being instance
     methods, which may change. (They may delegate to instance methods in the
