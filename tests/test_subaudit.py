@@ -1380,7 +1380,7 @@ def test_usable_in_high_churn(
         assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
-# FIXME: Retest some common cases with audit events from the standard library.
+# FIXME: Also xfail on all versions of CPython (but not PyPy) and explain why.
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
     reason='Python has no standard audit events before 3.8.',
@@ -1419,6 +1419,9 @@ def test_can_listen_to_standard_events_for_input(
         raise RuntimeError(f'got input {returned_result!r}, need {result!r}')
 
     assert parent.mock_calls == expected_calls
+
+
+# FIXME: Retest other common cases with audit events from the standard library.
 
 
 @pytest.mark.xfail(
