@@ -1409,10 +1409,12 @@ def test_can_listen_to_standard_events_for_input(
     with any_hook.listening('builtins.input', parent.listen_prompt):
         with any_hook.listening('builtins.input/result', parent.listen_result):
             with monkeypatch.context() as context:
-                # FIXME: Use the 3-argument form for context.setattr.
-                context.setattr('sys.stdin', io.StringIO(result))
+                context.setattr(sys, 'stdin', io.StringIO(result))
                 returned_result = input(prompt)
 
+    written_prompt = capsys.readouterr().out
+    if written_prompt != prompt:
+        raise RuntimeError(f'got output {written_prompt!r}, need {prompt!r}')
     if returned_result != result:
         raise RuntimeError(f'got input {returned_result!r}, need {result!r}')
 
