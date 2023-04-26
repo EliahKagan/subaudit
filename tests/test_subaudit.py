@@ -61,9 +61,6 @@ _R = TypeVar('_R')
 _R_co = TypeVar('_R_co', covariant=True)
 """Class-level output type variable (covariant)."""
 
-_STDIN_FILENO = 0
-"""File descriptor of real standard input."""
-
 
 class _FakeError(Exception):
     """Fake exception for testing."""
