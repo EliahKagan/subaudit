@@ -13,7 +13,7 @@
 
 """Tests for the subaudit module."""
 
-# TODO: Maybe split this into multiple modules.
+# TODO: Split this into multiple modules.
 
 import contextlib
 import datetime
@@ -39,12 +39,12 @@ from typing import (
     cast,
 )
 import unittest
-# TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
-from unittest.mock import _Call, _CallList, Mock, call
 import uuid
 
 import attrs
 import clock_timer
+from mock import Mock, call
+from mock.mock import _CallList  # FIXME: Don't violate encapsulation.
 import pytest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
@@ -261,7 +261,7 @@ def _make_events_fixture() -> _MultiSupplier[str]:
     return _MultiSupplier(_make_event)
 
 
-class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
+class _MockLike(Protocol):  # FIXME: Drop any members that are never used.
     """Protocol for objects with assert_* methods and call spying we need."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
@@ -269,27 +269,16 @@ class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
     __slots__ = ()
 
     @property
-    def called(self) -> bool: ...
-
-    @property
     def call_count(self) -> int: ...
 
     @property
     def mock_calls(self) -> _CallList: ...
-
-    def assert_called(self) -> None: ...
 
     def assert_called_once(self) -> None: ...
 
     def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
 
     def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_has_calls(
-        self, calls: Sequence[_Call], any_order: bool = False,
-    ) -> None: ...
 
     def assert_not_called(self) -> None: ...
 
@@ -469,7 +458,10 @@ def _mock_lock_fixture(
     strict=True,
 )
 def test_audit_is_sys_audit_since_3_8() -> None:
-    assert subaudit.audit is sys.audit
+    ours = subaudit.audit
+
+    # pylint: disable=no-member
+    assert ours is sys.audit  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
@@ -481,6 +473,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
     # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
+
     assert subaudit.audit is sysaudit.audit
 
 
@@ -491,7 +484,10 @@ def test_audit_is_sysaudit_audit_before_3_8() -> None:
     strict=True,
 )
 def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
-    assert subaudit.addaudithook is sys.addaudithook
+    ours = subaudit.addaudithook
+
+    # pylint: disable=no-member
+    assert ours is sys.addaudithook  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
@@ -503,6 +499,7 @@ def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
 def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
     # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
+
     assert subaudit.addaudithook is sysaudit.addaudithook
 
 
@@ -1316,7 +1313,7 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
 
 @attrs.frozen
-class ChurnCounts:
+class _ChurnCounts:
     """Parameters for a churn test. (Helper for test_usable_in_high_churn.)"""
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
@@ -1339,7 +1336,7 @@ def test_usable_in_high_churn(
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """~1000 listeners with frequent subscribe/unsubscribe isn't too slow."""
-    counts = ChurnCounts(listeners=1000, delta=100, iterations=100)
+    counts = _ChurnCounts(listeners=1000, delta=100, iterations=100)
     all_listeners = make_listeners(count=counts.listeners)
     prng = random.Random(18140838203929040771)
 
