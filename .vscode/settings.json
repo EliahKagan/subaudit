@@ -2,6 +2,7 @@
     "cSpell.words": [
         "addaudithook",
         "appender",
+        "builtins",
         "capsys",
         "docstrings",
         "dunder",
@@ -9,6 +10,7 @@
         "ipynb",
         "Kagan",
         "prng",
+        "readline",
         "subaudit",
         "sysaudit"
     ],
