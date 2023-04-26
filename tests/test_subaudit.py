@@ -455,8 +455,10 @@ def _mock_lock_fixture(
     strict=True,
 )
 def test_audit_is_sys_audit_since_3_8() -> None:
+    ours = subaudit.audit
+
     # pylint: disable=no-member
-    assert subaudit.audit is sys.audit  # type: ignore[attr-defined]
+    assert ours is sys.audit  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
@@ -468,6 +470,7 @@ def test_audit_is_sys_audit_since_3_8() -> None:
 def test_audit_is_sysaudit_audit_before_3_8() -> None:
     # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
+
     assert subaudit.audit is sysaudit.audit
 
 
@@ -478,9 +481,10 @@ def test_audit_is_sysaudit_audit_before_3_8() -> None:
     strict=True,
 )
 def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
+    ours = subaudit.addaudithook
+
     # pylint: disable=no-member
-    assert (subaudit.addaudithook
-            is sys.addaudithook)  # type: ignore[attr-defined]
+    assert ours is sys.addaudithook  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
@@ -492,6 +496,7 @@ def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
 def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
     # pylint: disable=import-error,import-outside-toplevel
     import sysaudit  # type: ignore[import]
+
     assert subaudit.addaudithook is sysaudit.addaudithook
 
 
