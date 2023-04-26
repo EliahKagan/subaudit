@@ -53,7 +53,6 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
-from subaudit import Hook
 
 _R = TypeVar('_R')
 """Function-level output type variable."""
@@ -138,7 +137,7 @@ class TopLevel:
         return subaudit.extracting(event, extractor)
 
 
-@pytest.fixture(name='any_hook', params=[Hook, TopLevel])
+@pytest.fixture(name='any_hook', params=[subaudit.Hook, TopLevel])
 def _any_hook_fixture(request: pytest.FixtureRequest) -> _AnyHook:
     """
     Hook instance or wrapper for the top-level functions (pytest fixture).
@@ -168,19 +167,19 @@ class _MultiSupplier(Generic[_R_co]):
         return tuple(self._supplier() for _ in range(count))
 
 
-def _make_hook() -> Hook:
+def _make_hook() -> subaudit.Hook:
     """Create a hook instance."""
-    return Hook()
+    return subaudit.Hook()
 
 
 @pytest.fixture(name='hook')
-def _hook_fixture() -> Hook:
+def _hook_fixture() -> subaudit.Hook:
     """Hook instance (pytest fixture)."""
     return _make_hook()
 
 
 @pytest.fixture(name='make_hooks')
-def _make_hooks_fixture() -> _MultiSupplier[Hook]:
+def _make_hooks_fixture() -> _MultiSupplier[subaudit.Hook]:
     """Supplier of multiple Hook instances (pytest fixture)."""
     return _MultiSupplier(_make_hook)
 
@@ -213,19 +212,19 @@ class _DerivedHookFixture:
     extracting_method: mock.Mock
     """Mock of the unbound extracting context manager method."""
 
-    instance: Hook
+    instance: subaudit.Hook
     """Instance of the Hook subclass whose methods are mocked."""
 
 
 @pytest.fixture(name='derived_hook')
 def _derived_hook_fixture() -> _DerivedHookFixture:
     """Make a new Hook subclass with methods mocked (pytest fixture)."""
-    subscribe_method = _UnboundMethodMock(wraps=Hook.subscribe)
-    unsubscribe_method = _UnboundMethodMock(wraps=Hook.unsubscribe)
-    listening_method = _UnboundMethodMock(wraps=Hook.listening)
-    extracting_method = _UnboundMethodMock(wraps=Hook.extracting)
+    subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
+    unsubscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.unsubscribe)
+    listening_method = _UnboundMethodMock(wraps=subaudit.Hook.listening)
+    extracting_method = _UnboundMethodMock(wraps=subaudit.Hook.extracting)
 
-    class MockedSubscribeUnsubscribeHook(Hook):
+    class MockedSubscribeUnsubscribeHook(subaudit.Hook):
         """Hook subclass with mocked methods, for a single test."""
         subscribe = subscribe_method
         unsubscribe = unsubscribe_method
@@ -384,7 +383,7 @@ class _ReprAsserter:
 
     def __call__(
         self,
-        hook: Hook,
+        hook: subaudit.Hook,
         summary_pattern: str,
         *,
         type_name_pattern: str = 'Hook',
@@ -414,7 +413,7 @@ class _MockLockFixture:
     lock_factory: mock.Mock
     """The mock lock (mutex). This does not do any real locking."""
 
-    hook: Hook
+    hook: subaudit.Hook
     """The Hook instance that was created using the mock lock."""
 
 
@@ -437,10 +436,10 @@ def _mock_lock_fixture(
     lock_factory = mocker.MagicMock(threading.Lock)
 
     if request.param is Scope.LOCAL:
-        hook = Hook(sub_lock_factory=lock_factory)
+        hook = subaudit.Hook(sub_lock_factory=lock_factory)
     elif request.param is Scope.GLOBAL:
         mocker.patch('threading.Lock', lock_factory)
-        hook = Hook()
+        hook = subaudit.Hook()
     else:
         # We've exhausted the enumeration, so the "scope" is the wrong type.
         raise TypeError('scope must be a Scope (one of LOCAL or GLOBAL)')
@@ -708,7 +707,9 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
 
 
 def test_cannot_unsubscribe_listener_from_other_hook(
-    make_hooks: _MultiSupplier[Hook], event: str, listener: _MockListener,
+    make_hooks: _MultiSupplier[subaudit.Hook],
+    event: str,
+    listener: _MockListener,
 ) -> None:
     hook1, hook2 = make_hooks(2)
     hook1.subscribe(event, listener)
@@ -721,12 +722,15 @@ def test_instance_construction_does_not_add_audit_hook(
 ) -> None:
     """Hook is lazy, not adding an audit hook before a listener subscribes."""
     addaudithook = mocker.patch('subaudit.addaudithook')
-    Hook()
+    subaudit.Hook()
     addaudithook.assert_not_called()
 
 
 def test_instance_adds_audit_hook_on_first_subscribe(
-    mocker: MockerFixture, hook: Hook, event: str, listener: _MockListener,
+    mocker: MockerFixture,
+    hook: subaudit.Hook,
+    event: str,
+    listener: _MockListener,
 ) -> None:
     addaudithook = mocker.patch('subaudit.addaudithook')
     hook.subscribe(event, listener)
@@ -735,7 +739,7 @@ def test_instance_adds_audit_hook_on_first_subscribe(
 
 def test_instance_does_not_add_audit_hook_on_second_subscribe(
     mocker: MockerFixture,
-    hook: Hook,
+    hook: subaudit.Hook,
     make_events: _MultiSupplier[str],
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -749,7 +753,7 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
 
 def test_second_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture,
-    make_hooks: _MultiSupplier[Hook],
+    make_hooks: _MultiSupplier[subaudit.Hook],
     make_events: _MultiSupplier[str],
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -1107,14 +1111,14 @@ def test_extracting_delegates_to_listening(
 
 
 def test_repr_shows_hook_not_installed_on_creation(
-    hook: Hook, assert_repr_summary: _ReprAsserter,
+    hook: subaudit.Hook, assert_repr_summary: _ReprAsserter,
 ) -> None:
     """A new Hook's repr has general info and the not-installed summary."""
     assert_repr_summary(hook, r'audit hook not installed')
 
 
 def test_repr_shows_one_event_while_listening(
-    hook: Hook,
+    hook: subaudit.Hook,
     event: str,
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
@@ -1124,7 +1128,7 @@ def test_repr_shows_one_event_while_listening(
 
 
 def test_repr_shows_no_events_after_done_listening(
-    hook: Hook,
+    hook: subaudit.Hook,
     event: str,
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
@@ -1135,7 +1139,7 @@ def test_repr_shows_no_events_after_done_listening(
 
 
 def test_repr_shows_both_events_when_nested_listening(
-    hook: Hook,
+    hook: subaudit.Hook,
     make_events: _MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
@@ -1147,7 +1151,7 @@ def test_repr_shows_both_events_when_nested_listening(
 
 
 def test_repr_shows_one_event_after_done_listening_to_second(
-    hook: Hook,
+    hook: subaudit.Hook,
     make_events: _MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
@@ -1160,7 +1164,7 @@ def test_repr_shows_one_event_after_done_listening_to_second(
 
 
 def test_repr_shows_no_events_after_done_nested_listening(
-    hook: Hook,
+    hook: subaudit.Hook,
     make_events: _MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
@@ -1173,7 +1177,7 @@ def test_repr_shows_no_events_after_done_nested_listening(
 
 
 def test_repr_shows_one_event_with_multiple_listeners_as_one(
-    hook: Hook,
+    hook: subaudit.Hook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
     assert_repr_summary: _ReprAsserter,
@@ -1280,7 +1284,7 @@ def test_lock_accepts_common_cm(
     the Hook with contextlib.nullcontext, Lock, or RLock as its lock factory
     for subscribing and unsubscribing, as a simple but nontrivial check.
     """
-    hook = Hook(sub_lock_factory=cm_factory)
+    hook = subaudit.Hook(sub_lock_factory=cm_factory)
 
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
@@ -1300,7 +1304,7 @@ def test_lock_accepts_common_cm(
 def test_sub_lock_factory_is_keyword_only() -> None:
     with pytest.raises(TypeError):
         # pylint: disable=too-many-function-args  # We are testing that error.
-        Hook(threading.Lock)  # type: ignore[misc]
+        subaudit.Hook(threading.Lock)  # type: ignore[misc]
 
 
 @pytest.mark.unstable
@@ -1315,7 +1319,7 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
     for func in top_level_functions:
         with subtests.test('bound to a hook', name=func.__name__):
-            assert isinstance(func.__self__, Hook)
+            assert isinstance(func.__self__, subaudit.Hook)
 
     with subtests.test('all bound to the same one'):
         assert len({func.__self__ for func in top_level_functions}) == 1
@@ -1340,7 +1344,7 @@ class _ChurnCounts:
 @pytest.mark.slow
 def test_usable_in_high_churn(
     subtests: SubTests,
-    hook: Hook,
+    hook: subaudit.Hook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -1463,7 +1467,7 @@ def test_can_listen_to_input_events(
 
 
 def test_can_listen_to_addaudithook_event(
-    make_hooks: _MultiSupplier[Hook],
+    make_hooks: _MultiSupplier[subaudit.Hook],
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
