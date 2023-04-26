@@ -451,6 +451,15 @@ def _mock_lock_fixture(
     yield _MockLockFixture(lock_factory=lock_factory, hook=hook)
 
 
+_xfail_no_standard_audit_events_before_3_8 = pytest.mark.xfail(
+    sys.version_info < (3, 8),
+    reason='Python has no standard audit events before 3.8.',
+    raises=AssertionError,
+    strict=True,
+)
+"""Mark expected failure by AssertionError due to no library events < 3.8."""
+
+
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
 
 
@@ -1380,13 +1389,7 @@ def test_usable_in_high_churn(
         assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
-# FIXME: Extract the mark decoration, *if* it is *exactly* duplicated.
-@pytest.mark.xfail(
-    sys.version_info < (3, 8),
-    reason='Python has no standard audit events before 3.8.',
-    raises=AssertionError,
-    strict=True,
-)
+@_xfail_no_standard_audit_events_before_3_8
 def test_can_listen_to_open_event(
     tmp_path: pathlib.Path, any_hook: _AnyHook, listener: _MockListener,
 ) -> None:
@@ -1408,12 +1411,7 @@ def test_can_listen_to_open_event(
     raises=AssertionError,
     strict=True,
 )
-@pytest.mark.xfail(
-    sys.version_info < (3, 8),
-    reason='Python has no standard audit events before 3.8.',
-    raises=AssertionError,
-    strict=True,
-)
+@_xfail_no_standard_audit_events_before_3_8
 def test_can_listen_to_input_events(
     capsys: pytest.CaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
