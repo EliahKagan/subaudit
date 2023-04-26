@@ -560,6 +560,23 @@ files = [
 ]
 
 [[package]]
+name = "mock"
+version = "5.0.2"
+description = "Rolling backport of unittest.mock for all Pythons"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "mock-5.0.2-py3-none-any.whl", hash = "sha256:0e0bc5ba78b8db3667ad636d964eb963dc97a59f04c6f6214c5f0e4a8f726c56"},
+    {file = "mock-5.0.2.tar.gz", hash = "sha256:06f18d7d65b44428202b145a9a36e99c2ee00d1eb992df0caf881d4664377891"},
+]
+
+[package.extras]
+build = ["blurb", "twine", "wheel"]
+docs = ["sphinx"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
 name = "mypy"
 version = "1.2.0"
 description = "Optional static typing for Python"
@@ -1307,6 +1324,18 @@ files = [
 ]
 
 [[package]]
+name = "types-mock"
+version = "5.0.0.6"
+description = "Typing stubs for mock"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-mock-5.0.0.6.tar.gz", hash = "sha256:3abdee238948c6678ef5b4fd740bd41d30289a2fe4d91aac4ae9f6869e6c9333"},
+    {file = "types_mock-5.0.0.6-py3-none-any.whl", hash = "sha256:6946f4b2240160a1740db7d6c8e8736705acd133afd98555897db0116d41a6fc"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.5.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -1434,4 +1463,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "5a32d96a7af5f56fd029661b26b1cb99a670e09f8e0054546a23b820708a510d"
+content-hash = "cce85bc9f17173627620835d00cad44b6e92fe2c7c0b442b0ed596d167695000"

@@ -13,7 +13,7 @@
 
 """Tests for the subaudit module."""
 
-# TODO: Maybe split this into multiple modules.
+# TODO: Split this into multiple modules.
 
 import contextlib
 import datetime
@@ -38,12 +38,12 @@ from typing import (
     cast,
 )
 import unittest
-# TODO: Find a way to hint like _Call and _CallList, yet respect encapsulation.
-from unittest.mock import _Call, _CallList, Mock, call
 import uuid
 
 import attrs
 import clock_timer
+from mock import Mock, call
+from mock.mock import _Call, _CallList  # FIXME: Don't violate encapsulation.
 import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
@@ -258,7 +258,7 @@ def _make_events_fixture() -> _MultiSupplier[str]:
     return _MultiSupplier(_make_event)
 
 
-class _MockLike(Protocol):  # TODO: Drop any members that aren't needed.
+class _MockLike(Protocol):  # FIXME: Drop any members that aren't needed.
     """Protocol for objects with assert_* methods and call spying we need."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
