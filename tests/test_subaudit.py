@@ -455,7 +455,8 @@ def _mock_lock_fixture(
     strict=True,
 )
 def test_audit_is_sys_audit_since_3_8() -> None:
-    assert subaudit.audit is sys.audit
+    # pylint: disable=no-member
+    assert subaudit.audit is sys.audit  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
@@ -477,7 +478,9 @@ def test_audit_is_sysaudit_audit_before_3_8() -> None:
     strict=True,
 )
 def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
-    assert subaudit.addaudithook is sys.addaudithook
+    # pylint: disable=no-member
+    assert (subaudit.addaudithook
+            is sys.addaudithook)  # type: ignore[attr-defined]
 
 
 @pytest.mark.xfail(
