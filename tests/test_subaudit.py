@@ -11,7 +11,7 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-"""Tests for the subaudit module."""
+"""Tests for the ``subaudit`` module."""
 
 # TODO: Split this into multiple modules.
 
@@ -68,7 +68,7 @@ class _FakeError(Exception):
 @pytest.fixture(name='maybe_raise', params=[False, True])
 def _maybe_raise_fixture(request: pytest.FixtureRequest) -> Callable[[], None]:
     """
-    Function that either raises _FakeError or do nothing (pytest fixture).
+    Function to either raises ``_FakeError`` or do nothing (pytest fixture).
 
     This multiplies tests, covering raising and non-raising cases.
     """
@@ -80,7 +80,7 @@ def _maybe_raise_fixture(request: pytest.FixtureRequest) -> Callable[[], None]:
 
 
 class _AnyHook(Protocol):
-    """Protocol for the Hook interface."""
+    """Protocol for the ``Hook`` interface."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
 
@@ -102,12 +102,13 @@ class _AnyHook(Protocol):
 
 class TopLevel:
     """
-    Test double providing top-level Hook functions from the subaudit module.
+    Test double providing top-level functions from the ``subaudit`` module.
 
-    This is so the tests of those functions don't depend on them being instance
-    methods, which may change. (They may delegate to instance methods in the
-    future. We would lose __self__, but they could have their own docstrings.)
-    Otherwise, we would just access __self__ on one of them and use that Hook.
+    This is so the tests of the top-level functions don't depend on them being
+    instance methods (of ``Hook``), which may change. (They may delegate to
+    instance methods in the future. We would lose ``__self__``, but they could
+    have their own docstrings.) Otherwise, we would just access ``__self__`` on
+    one of them and use that ``Hook``.
     """
 
     __slots__ = ()
@@ -117,30 +118,30 @@ class TopLevel:
         return f'{type(self).__name__}()'
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Call the top-level subscribe."""
+        """Call the top-level ``subscribe``."""
         return subaudit.subscribe(event, listener)
 
     def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Call the top-level unsubscribe."""
+        """Call the top-level ``unsubscribe``."""
         return subaudit.unsubscribe(event, listener)
 
     def listening(
         self, event: str, listener: Callable[..., None],
     ) -> ContextManager[None]:
-        """Call the top-level listening."""
+        """Call the top-level ``listening``."""
         return subaudit.listening(event, listener)
 
     def extracting(
         self, event: str, extractor: Callable[..., _R],
     ) -> ContextManager[List[_R]]:
-        """Call the top-level extracting."""
+        """Call the top-level ``extracting``."""
         return subaudit.extracting(event, extractor)
 
 
 @pytest.fixture(name='any_hook', params=[subaudit.Hook, TopLevel])
 def _any_hook_fixture(request: pytest.FixtureRequest) -> _AnyHook:
     """
-    Hook instance or wrapper for the top-level functions (pytest fixture).
+    ``Hook`` instance or wrapper for the top-level functions (pytest fixture).
 
     This multiplies tests, covering new instances and module-level functions.
     """
@@ -163,29 +164,29 @@ class _MultiSupplier(Generic[_R_co]):
         return f'{type(self).__name__}({self._supplier!r})'
 
     def __call__(self, count: int) -> Tuple[_R_co, ...]:
-        """Make the specific number (count) of things."""
+        """Make the specific number (``count``) of things."""
         return tuple(self._supplier() for _ in range(count))
 
 
 def _make_hook() -> subaudit.Hook:
-    """Create a hook instance."""
+    """Create a ``Hook`` instance."""
     return subaudit.Hook()
 
 
 @pytest.fixture(name='hook')
 def _hook_fixture() -> subaudit.Hook:
-    """Hook instance (pytest fixture)."""
+    """``Hook`` instance (pytest fixture)."""
     return _make_hook()
 
 
 @pytest.fixture(name='make_hooks')
 def _make_hooks_fixture() -> _MultiSupplier[subaudit.Hook]:
-    """Supplier of multiple Hook instances (pytest fixture)."""
+    """Supplier of multiple ``Hook`` instances (pytest fixture)."""
     return _MultiSupplier(_make_hook)
 
 
 class _UnboundMethodMock(mock.Mock):
-    """A mock that is also a descriptor, to behave like a function."""
+    """A ``Mock`` that is also a descriptor, to behave like a function."""
 
     def __get__(self, instance: Any, owner: Any = None) -> Any:
         """When accessed through an instance, produce a "bound method"."""
@@ -195,37 +196,39 @@ class _UnboundMethodMock(mock.Mock):
 @attrs.frozen
 class _DerivedHookFixture:
     """
-    New Hook subclass method mocks and instance, for the derived_hook fixture.
+    A newly created ``Hook`` subclass's method mocks, and an instance.
+
+    This is what the ``derived_hook`` fixture provides.
     """
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
     subscribe_method: mock.Mock
-    """Mock of the unbound subscribe method."""
+    """Mock of the unbound ``subscribe`` method."""
 
     unsubscribe_method: mock.Mock
-    """Mock of the unbound unsubscribe method."""
+    """Mock of the unbound ``unsubscribe`` method."""
 
     listening_method: mock.Mock
-    """Mock of the unbound listening context manager method."""
+    """Mock of the unbound ``listening`` context manager method."""
 
     extracting_method: mock.Mock
-    """Mock of the unbound extracting context manager method."""
+    """Mock of the unbound ``extracting`` context manager method."""
 
     instance: subaudit.Hook
-    """Instance of the Hook subclass whose methods are mocked."""
+    """Instance of the ``Hook`` subclass whose methods are mocked."""
 
 
 @pytest.fixture(name='derived_hook')
 def _derived_hook_fixture() -> _DerivedHookFixture:
-    """Make a new Hook subclass with methods mocked (pytest fixture)."""
+    """Make a new ``Hook`` subclass with methods mocked (pytest fixture)."""
     subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
     unsubscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.unsubscribe)
     listening_method = _UnboundMethodMock(wraps=subaudit.Hook.listening)
     extracting_method = _UnboundMethodMock(wraps=subaudit.Hook.extracting)
 
     class MockedSubscribeUnsubscribeHook(subaudit.Hook):
-        """Hook subclass with mocked methods, for a single test."""
+        """``Hook`` subclass with mocked methods, for a single test."""
         subscribe = subscribe_method
         unsubscribe = unsubscribe_method
         listening = listening_method
@@ -260,7 +263,9 @@ def _make_events_fixture() -> _MultiSupplier[str]:
 
 
 class _MockLike(Protocol):
-    """Protocol for objects with assert_* methods and call spying we need."""
+    """
+    Protocol for objects with ``assert_*`` methods and call spying we need.
+    """
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
 
@@ -283,7 +288,7 @@ class _MockLike(Protocol):
 
 
 class _MockListener(_MockLike, Protocol):
-    """Protocol for a listener that supports some of the Mock interface."""
+    """Protocol for a listener that supports some of the ``Mock`` interface."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
 
@@ -357,12 +362,14 @@ class _Extract:
 
     @classmethod
     def from_separate_args(cls, *args: Any) -> Self:
-        """Create an _Extract instance from separately passed arguments."""
+        """Create an ``_Extract`` instance from separately passed arguments."""
         return cls(args=args)
 
 
 class _MockExtractor(_MockLike, Protocol):
-    """Protocol for an extractor that supports some of the Mock interface."""
+    """
+    Protocol for an extractor that supports some of the ``Mock`` interface.
+    """
 
     __slots__ = ()
 
@@ -377,7 +384,7 @@ def _extractor_fixture() -> _MockExtractor:
 
 @attrs.frozen
 class _ReprAsserter:
-    """Callable to assert correct Hook repr."""
+    """Callable to assert correct ``Hook`` repr."""
 
     # pylint: disable=too-few-public-methods  # Class for clearer type hinting.
 
@@ -396,7 +403,7 @@ class _ReprAsserter:
 @pytest.fixture(name='assert_repr_summary')
 def _assert_repr_summary_fixture() -> _ReprAsserter:
     """
-    Function to assert a hook has a correct repr (pytest fixture).
+    Function to assert a ``Hook`` instance has a correct repr (pytest fixture).
 
     The repr is asserted to be in the non-code style, containing general
     information followed by a summary matching the specific pattern passed.
@@ -406,7 +413,9 @@ def _assert_repr_summary_fixture() -> _ReprAsserter:
 
 @attrs.frozen
 class _MockLockFixture:
-    """A mock lock factory and Hook that uses it, for the mock_lock fixture."""
+    """
+    Mock lock factory and ``Hook`` that uses it, for the ``mock_lock`` fixture.
+    """
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
@@ -414,12 +423,14 @@ class _MockLockFixture:
     """The mock lock (mutex). This does not do any real locking."""
 
     hook: subaudit.Hook
-    """The Hook instance that was created using the mock lock."""
+    """The ``Hook`` instance that was created using the mock lock."""
 
 
 @enum.unique
 class Scope(enum.Enum):
-    """Ways to supply a mock lock to a Hook: pass locally or patch globally."""
+    """
+    Ways to supply a mock lock to a ``Hook``: pass locally or patch globally.
+    """
 
     LOCAL = enum.auto()
     """Pass locally."""
@@ -432,7 +443,7 @@ class Scope(enum.Enum):
 def _mock_lock_fixture(
     request: pytest.FixtureRequest, mocker: MockerFixture,
 ) -> Generator[_MockLockFixture, None, None]:
-    """A Hook created with its lock mocked (pytest fixture)."""
+    """A ``Hook`` created with its lock mocked (pytest fixture)."""
     lock_factory = mocker.MagicMock(threading.Lock)
 
     if request.param is Scope.LOCAL:
@@ -453,7 +464,9 @@ _xfail_no_standard_audit_events_before_3_8 = pytest.mark.xfail(
     raises=AssertionError,
     strict=True,
 )
-"""Mark expected failure by AssertionError due to no library events < 3.8."""
+"""
+Mark expected failure by ``AssertionError`` due to no library events < 3.8.
+"""
 
 
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
@@ -720,7 +733,9 @@ def test_cannot_unsubscribe_listener_from_other_hook(
 def test_instance_construction_does_not_add_audit_hook(
     mocker: MockerFixture,
 ) -> None:
-    """Hook is lazy, not adding an audit hook before a listener subscribes."""
+    """
+    ``Hook`` is lazy, not adding an audit hook before a listener subscribes.
+    """
     addaudithook = mocker.patch('subaudit.addaudithook')
     subaudit.Hook()
     addaudithook.assert_not_called()
@@ -757,7 +772,7 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
     make_events: _MultiSupplier[str],
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
-    """Different Hook objects do not share the same audit hook."""
+    """Different ``Hook`` objects do not share the same audit hook."""
     hook1, hook2 = make_hooks(2)
     event1, event2 = make_events(2)
     listener1, listener2 = make_listeners(2)
@@ -770,7 +785,7 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
 def test_listening_does_not_observe_before_enter(
     any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    """The call to listening does not itself subscribe."""
+    """The call to ``listening`` does not itself subscribe."""
     context_manager = any_hook.listening(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
     with context_manager:
@@ -788,7 +803,7 @@ def test_listening_does_not_call_subscribe_before_enter(
 def test_listening_observes_between_enter_and_exit(
     any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    """In the block of a with statement, the listener is subscribed."""
+    """In the block of a ``with``-statement, the listener is subscribed."""
     with any_hook.listening(event, listener):
         subaudit.audit(event, 'a', 'b', 'c')
     listener.assert_called_once_with('a', 'b', 'c')
@@ -797,7 +812,7 @@ def test_listening_observes_between_enter_and_exit(
 def test_listening_enter_calls_subscribe(
     derived_hook: _DerivedHookFixture, event: str, listener: _MockListener,
 ) -> None:
-    """An overridden subscribe method will be used by listening."""
+    """An overridden ``subscribe`` method will be used by ``listening``."""
     with derived_hook.instance.listening(event, listener):
         derived_hook.subscribe_method.assert_called_once_with(
             derived_hook.instance,
@@ -812,7 +827,7 @@ def test_listening_does_not_observe_after_exit(
     event: str,
     listener: _MockListener,
 ) -> None:
-    """After exiting the with statement, the listener is not subscribed."""
+    """After exiting the ``with``-statement, the listener is not subscribed."""
     with contextlib.suppress(_FakeError):
         with any_hook.listening(event, listener):
             maybe_raise()
@@ -827,7 +842,7 @@ def test_listening_exit_calls_unsubscribe(
     event: str,
     listener: _MockListener,
 ) -> None:
-    """An overridden unsubscribe method will be called by listening."""
+    """An overridden ``unsubscribe`` method will be called by ``listening``."""
     with contextlib.suppress(_FakeError):
         with derived_hook.instance.listening(event, listener):
             with subtests.test(where='inside-with-block'):
@@ -848,7 +863,9 @@ def test_listening_observes_only_between_enter_and_exit(
     event: str,
     listener: _MockListener,
 ) -> None:
-    """The listening context manager works in (simple yet) nontrivial usage."""
+    """
+    The ``listening`` context manager works in (simple yet) nontrivial usage.
+    """
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
@@ -867,7 +884,7 @@ def test_listening_observes_only_between_enter_and_exit(
 def test_listening_enter_returns_none(
     any_hook: _AnyHook, event: str, listener: _MockListener,
 ) -> None:
-    """The listening context manager isn't meant to be used with "as"."""
+    """The ``listening`` context manager isn't meant to be used with ``as``."""
     with any_hook.listening(event, listener) as context:
         pass
     assert context is None
@@ -1099,7 +1116,9 @@ def test_extracting_delegates_to_listening(
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    """Overriding listening customizes the behavior of extracting too."""
+    """
+    Overriding ``listening`` customizes the behavior of ``extracting`` too.
+    """
     with contextlib.suppress(_FakeError):
         with derived_hook.instance.extracting(event, extractor):
             with subtests.test('listening called'):
@@ -1113,7 +1132,7 @@ def test_extracting_delegates_to_listening(
 def test_repr_shows_hook_not_installed_on_creation(
     hook: subaudit.Hook, assert_repr_summary: _ReprAsserter,
 ) -> None:
-    """A new Hook's repr has general info and the not-installed summary."""
+    """A new ``Hook``'s repr has general info and the not-installed summary."""
     assert_repr_summary(hook, r'audit hook not installed')
 
 
@@ -1199,12 +1218,12 @@ def test_repr_uses_derived_class_type_name(
 
 
 def test_lock_constructed_immediately(mock_lock: _MockLockFixture) -> None:
-    """When a Hook is constructed, it calls its lock factory."""
+    """When a ``Hook`` is constructed, it calls its lock factory."""
     mock_lock.lock_factory.assert_called_once_with()
 
 
 def test_lock_not_entered_immediately(mock_lock: _MockLockFixture) -> None:
-    """When a Hook is constructed, it does not actually enter the lock."""
+    """When a ``Hook`` is constructed, it does not actually enter the lock."""
     mock_lock.lock_factory().__enter__.assert_not_called()
 
 
@@ -1233,7 +1252,7 @@ def test_unsubscribe_enters_and_exits_lock(
 def test_subscribe_never_calls_acquire(
     mock_lock: _MockLockFixture, event: str, listener: _MockListener,
 ) -> None:
-    """The lock context manager is not required to have an acquire method."""
+    """The lock context manager does not need to have an ``acquire`` method."""
     mock_lock.hook.subscribe(event, listener)
     mock_lock.lock_factory().acquire.assert_not_called()
 
@@ -1241,7 +1260,7 @@ def test_subscribe_never_calls_acquire(
 def test_subscribe_never_calls_release(
     mock_lock: _MockLockFixture, event: str, listener: _MockListener,
 ) -> None:
-    """The lock context manager is not required to have a release method."""
+    """The lock context manager does not need to have a ``release`` method."""
     mock_lock.hook.subscribe(event, listener)
     mock_lock.lock_factory().release.assert_not_called()
 
@@ -1249,7 +1268,7 @@ def test_subscribe_never_calls_release(
 def test_unsubscribe_never_calls_acquire(
     mock_lock: _MockLockFixture, event: str, listener: _MockListener,
 ) -> None:
-    """The lock context manager is not required to have an acquire method."""
+    """The lock context manager does not need to have an ``acquire`` method."""
     mock_lock.hook.subscribe(event, listener)  # So that we can unsubscribe it.
     mock_lock.lock_factory().reset_mock()  # To only see calls via unsubscribe.
     mock_lock.hook.unsubscribe(event, listener)
@@ -1259,7 +1278,7 @@ def test_unsubscribe_never_calls_acquire(
 def test_unsubscribe_never_calls_release(
     mock_lock: _MockLockFixture, event: str, listener: _MockListener,
 ) -> None:
-    """The lock context manager is not required to have a release method."""
+    """The lock context manager does not need to have a ``release`` method."""
     mock_lock.hook.subscribe(event, listener)  # So that we can unsubscribe it.
     mock_lock.lock_factory().reset_mock()  # To only see calls via unsubscribe.
     mock_lock.hook.unsubscribe(event, listener)
@@ -1280,9 +1299,10 @@ def test_lock_accepts_common_cm(
     """
     A hook with a lock or nullcontext as its lock factory works for listening.
 
-    This is test_listening_observes_only_between_enter_and_exit, but creating
-    the Hook with contextlib.nullcontext, Lock, or RLock as its lock factory
-    for subscribing and unsubscribing, as a simple but nontrivial check.
+    This is like ``test_listening_observes_only_between_enter_and_exit``, but
+    it creates the ``Hook`` with ``contextlib.nullcontext``, ``Lock``, or
+    ``RLock`` as its lock factory for subscribing and unsubscribing, as a
+    simple but nontrivial check.
     """
     hook = subaudit.Hook(sub_lock_factory=cm_factory)
 
@@ -1309,7 +1329,7 @@ def test_sub_lock_factory_is_keyword_only() -> None:
 
 @pytest.mark.unstable
 def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
-    """The module-level functions are bound methods of a Hook object."""
+    """The module-level functions are bound methods of a ``Hook`` object."""
     top_level_functions = cast(Sequence[MethodType], [
         subaudit.subscribe,
         subaudit.unsubscribe,
@@ -1327,7 +1347,7 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
 @attrs.frozen
 class _ChurnCounts:
-    """Parameters for a churn test. (Helper for test_usable_in_high_churn.)"""
+    """Parameters for a churn test. (``test_usable_in_high_churn`` helper.)"""
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
@@ -1348,7 +1368,9 @@ def test_usable_in_high_churn(
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
-    """~1000 listeners with frequent subscribe/unsubscribe isn't too slow."""
+    """
+    ~1000 listeners with frequent ``subscribe``/``unsubscribe`` isn't too slow.
+    """
     counts = _ChurnCounts(listeners=1000, delta=100, iterations=100)
     all_listeners = make_listeners(count=counts.listeners)
     prng = random.Random(18140838203929040771)
@@ -1395,7 +1417,7 @@ def test_can_listen_to_id_event(
     any_hook: _AnyHook, listener: _MockListener,
 ) -> None:
     """
-    We can listen to the builtins.id event.
+    We can listen to the ``builtins.id`` event.
 
     See https://docs.python.org/3/library/audit_events.html. We should be able
     to listen to any event listed there, but these tests only try a select few.
@@ -1412,7 +1434,7 @@ def test_can_listen_to_open_event(
     tmp_path: pathlib.Path, any_hook: _AnyHook, listener: _MockListener,
 ) -> None:
     """
-    We can listen to the open event.
+    We can listen to the ``open`` event.
 
     See https://docs.python.org/3/library/audit_events.html. We should be able
     to listen to any event listed there, but these tests only try a select few.
@@ -1442,12 +1464,13 @@ def test_can_listen_to_input_events(
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """
-    We can listen to the builtins.input and builtins.input/result events.
+    We can listen to ``builtins.input`` and ``builtins.input/result`` events.
 
     See https://docs.python.org/3/library/audit_events.html. We should be able
     to listen to any event listed there, but these tests only try a select few.
 
-    See notebooks/input_events.ipynb about builtins.input/result subtleties.
+    See ``notebooks/input_events.ipynb`` about ``builtins.input/result``
+    subtleties.
     """
     prompt = 'What... is the airspeed velocity of an unladen swallow? '
     result = 'What do you mean? An African or European swallow?'
@@ -1477,12 +1500,12 @@ def test_can_listen_to_addaudithook_event(
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """
-    We can listen to the sys.addaudithook event.
+    We can listen to the ``sys.addaudithook`` event.
 
     See https://docs.python.org/3/library/audit_events.html. We should be able
     to listen to any event listed there, but these tests only try a select few.
 
-    The sysaudit library backports this event to Python 3.7.
+    The ``sysaudit`` library backports this event to Python 3.7.
     """
     hook1, hook2 = make_hooks(2)
     listener1, listener2 = make_listeners(2)

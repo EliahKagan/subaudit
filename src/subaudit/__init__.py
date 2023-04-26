@@ -53,26 +53,27 @@ _R = TypeVar('_R')
 
 LockContextManager = Union[ContextManager[None], ContextManager[bool]]
 """
-Type alias for context managers whose __enter__ returns None or returns bool.
+Type alias covering ``None``-returning and ``bool``-returning context managers.
 
-Lock, RLock, and other synchronization primitives' __enter__ methods always
-return True or False, because it is possible to attempt to enter them in such a
-way that they are not entered but this is not considered an error. This is
-rarely done when they are used as context managers, but for type hints be
-correct, we must allow this.
+``Lock``, ``RLock``, and other synchronization primitives' ``__enter__``
+methods always return ``True`` or ``False``, because it is possible to attempt
+to enter them in such a way that they are not entered but this is not
+considered an error. This is rarely done when they are used as context
+managers, but for type hints be correct, we must allow this.
 
 Other context managers that may make sense to use for, or instead of,
-synchronization — including the trivial contextlib.nullcontext — are
-conceptually void, always returning None.
+synchronization — including the trivial ``contextlib.nullcontext`` — are
+conceptually void, always returning ``None``.
 
-Note that this is subtly different from __enter__ having Optional[None] as its
-return type, which would mean that the same instance could return None on some
-__enter__ calls but a bool value on others. This alias makes that a type error.
+Note that this is subtly different from ``__enter__`` having ``Optional[None]``
+as its return type, which would mean that the same instance could return
+``None`` on some ``__enter__`` calls but a ``bool`` value on others. This alias
+makes that a type error.
 """
 
 LockContextManagerFactory = Callable[[], LockContextManager]
 """
-Type alias for classes or factory functions returning a LockContextManager.
+Type alias for classes or factory functions returning a ``LockContextManager``.
 """
 
 
@@ -81,38 +82,43 @@ class Hook:
     Audit hook wrapper. Subscribes and unsubscribes specific-event listeners.
 
     Listeners are subscribed and unsubscribed for specific auditing events.
-    Only one audit hook (per Hook instance) is used. It is installed the first
-    time a listener is subscribed to any event via the Hook instance; if the
-    instance is never used, no audit hook is installed. A program rarely needs
-    multiple Hook instances, even with many listeners and events. The subaudit
-    module provides top-level subscribe, unsubscribe, listening, and extracting
-    functions, which use a pre-created Hook instance.
+    Only one audit hook (per ``Hook`` instance) is used. It is installed the
+    first time a listener is subscribed to any event via the ``Hook`` instance;
+    if the instance is never used, no audit hook is installed. A program rarely
+    needs multiple ``Hook`` instances, even with many listeners and events. The
+    ``subaudit`` module provides top-level ``subscribe``, ``unsubscribe``,
+    ``listening``, and ``extracting`` functions, which use a pre-created
+    ``Hook`` instance.
 
-    The subscribe and unsubscribe methods, but not the installed audit hook,
-    are by default protected by a mutex. The audit hook can be called at any
-    time, including as subscribe or unsubscribe runs: it is called on all audit
-    events, filtering for those of interest. However, if the Python interpreter
-    is CPython — or another implementation where writing an attribute reference
-    is atomic, and writing or deleting an item in a dict with string keys is
-    atomic — then the Hook's state should not be corrupted. In short, on
-    CPython, strange behavior and segfaults shouldn't happen due to an event
-    firing, even if a listener subscribes or unsubscribes at the same time.
+    The ``subscribe`` and ``unsubscribe`` methods, but not the installed audit
+    hook, are by default protected by a mutex. The audit hook can be called at
+    any time, including as ``subscribe`` or ``unsubscribe`` runs: it is called
+    on all audit events, filtering for those of interest. However, if the
+    Python interpreter is CPython — or another implementation where writing an
+    attribute reference is atomic, and writing or deleting an item in a dict
+    with string keys is atomic — then the ``Hook``'s state should not be
+    corrupted. In short, on CPython, strange behavior and segfaults shouldn't
+    happen due to an event firing, even if a listener subscribes or
+    unsubscribes at the same time.
 
-    Hook objects are not optimized for the case of an event having a large
-    number of listeners. This is because a Hook stores each event's listeners
-    in an immutable sequence, rebuilt each time a listener is subscribed or
-    unsubscribed. (This is part of how consistent state is maintained, so the
-    audit hook doesn't need to synchronize with subscribe and unsubscribe.)
-    Subscribing N listeners to the same event without unsubscribing takes O(N²)
-    time. If you need more than a couple hundred listeners on the same event at
-    the same time, especially if you also frequently subscribe and unsubscribe
-    listeners to that same event, this may be the wrong tool.
+    ``Hook`` objects are not optimized for the case of an event having a large
+    number of listeners. This is because a ``Hook`` stores each event's
+    listeners in an immutable sequence, rebuilt each time a listener is
+    subscribed or unsubscribed. (This is part of how consistent state is
+    maintained, so the audit hook doesn't need to synchronize with subscribe
+    and unsubscribe.) Subscribing N listeners to the same event without
+    unsubscribing takes O(N²) time. If you need more than a couple hundred
+    listeners on the same event at the same time, especially if you also
+    frequently subscribe and unsubscribe listeners to that same event, this may
+    be the wrong tool.
     """
 
     __slots__ = ('_lock', '_hook_installed', '_table')
 
     _lock: LockContextManager
-    """Mutex or other context manager used to protect subscribe/unsubscribe."""
+    """
+    Mutex or other context manager. Protects ``subscribe`` and ``unsubscribe``.
+    """
 
     _hook_installed: bool
     """Whether the audit hook is installed yet."""
@@ -126,9 +132,9 @@ class Hook:
         """
         Make an audit hook wrapper, which will use its own audit hook.
 
-        If sub_lock_factory is passed, it is called and the result must be a
-        context manager object, which is used as a mutex during subscribing
-        and unsubscribing. To forgo locking, pass contextlib.nullcontext.
+        If ``sub_lock_factory`` is passed, it is called and the result must be
+        a context manager object, which is used as a mutex during subscribing
+        and unsubscribing. To forgo locking, pass ``contextlib.nullcontext``.
         """
         if sub_lock_factory is None:
             sub_lock_factory = threading.Lock
@@ -198,7 +204,7 @@ class Hook:
 
     def _summarize(self) -> str:
         """
-        Summarize the state of the Hook instance. Used as part of the repr.
+        Summarize the state of the ``Hook`` instance. Used as part of the repr.
 
         For now, just include info CPython lets us get safely without a lock.
         """
@@ -222,11 +228,12 @@ class Hook:
         self, event: str, listener: Callable[..., None],
     ) -> Generator[None, None, None]:
         """
-        Helper for listening.
+        Helper for ``listening``.
 
-        Callers shouldn't assume listening returns GeneratorContextManager.
-        This helper allow listening to have the desired type annotations.
-        Subclasses may override listening but shouldn't override or call this.
+        Callers shouldn't assume ``listening`` returns
+        ``GeneratorContextManager``. This helper allow ``listening`` to have
+        the desired type annotations. Subclasses may override ``listening`` but
+        shouldn't override or call this.
         """
         self.subscribe(event, listener)
         try:
@@ -239,11 +246,12 @@ class Hook:
         self, event: str, extractor: Callable[..., _R],
     ) -> Generator[List[_R], None, None]:
         """
-        Helper for extracting.
+        Helper for ``extracting``.
 
-        Callers shouldn't assume extracting returns GeneratorContextManager.
-        This helper allows extracting to have the desired type annotations.
-        Subclasses may override extracting but shouldn't override or call this.
+        Callers shouldn't assume ``extracting`` returns
+        ``GeneratorContextManager``. This helper allows ``extracting`` to have
+        the desired type annotations. Subclasses may override ``extracting``
+        but shouldn't override or call this.
         """
         extracts: List[_R] = []
 
@@ -256,11 +264,12 @@ class Hook:
 
 _global_instance = Hook()
 """
-Hook instance used by the top-level functions.
+``Hook`` instance used by the top-level functions.
 
-The module-level subscribe, unsubscribe, listening, and extracting functions
-use this instance. This should not be confused with the behavior of each Hook
-object in installing (at most) one actual auditing event hook.
+The module-level ``subscribe``, ``unsubscribe``, ``listening``, and
+``extracting`` functions use this instance. This should not be confused with
+the behavior of each ``Hook`` object in installing (at most) one actual
+auditing event hook.
 """
 
 subscribe = _global_instance.subscribe
@@ -273,4 +282,6 @@ skip_if_unavailable = unittest.skipIf(
     sys.version_info < (3, 8),
     'Python Runtime Audit Hooks (PEP 578) were introduced in Python 3.8.',
 )
-"""Skip a unittest test unless the standard library supports audit events."""
+"""
+Skip a ``unittest`` test if the standard library does not provide audit events.
+"""
