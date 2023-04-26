@@ -1418,8 +1418,13 @@ def test_can_listen_to_open_event(
     to listen to any event listed there, but these tests only try a select few.
     """
     path = tmp_path / 'output.txt'
+
     with any_hook.listening('open', listener):
-        path.write_text('some text')
+        # Using the open builtin instead of path.write_text simplifies the test
+        # due to subtleties covered in examples/notebooks/open_event.ipynb.
+        with open(path, mode='w', encoding='utf-8'):
+            pass
+
     listener.assert_called_with(str(path), 'w', mock.ANY)
 
 
