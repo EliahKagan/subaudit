@@ -44,9 +44,9 @@ from typing import (
 import unittest
 
 if sys.version_info < (3, 8):
-    from sysaudit import audit, addaudithook
+    from sysaudit import addaudithook, audit
 else:
-    from sys import audit, addaudithook
+    from sys import addaudithook, audit
 
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
