@@ -10,6 +10,7 @@
         "ipynb",
         "Kagan",
         "pathlib",
+        "PosixPath",
         "prng",
         "readline",
         "subaudit",
