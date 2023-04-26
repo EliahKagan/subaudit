@@ -43,7 +43,7 @@ import uuid
 import attrs
 import clock_timer
 from mock import Mock, call
-from mock.mock import _Call, _CallList  # FIXME: Don't violate encapsulation.
+from mock.mock import _CallList  # FIXME: Don't violate encapsulation.
 import pytest
 from pytest import FixtureRequest
 from pytest_mock import MockerFixture
@@ -258,7 +258,7 @@ def _make_events_fixture() -> _MultiSupplier[str]:
     return _MultiSupplier(_make_event)
 
 
-class _MockLike(Protocol):  # FIXME: Drop any members that aren't needed.
+class _MockLike(Protocol):  # FIXME: Drop any members that are never used.
     """Protocol for objects with assert_* methods and call spying we need."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
@@ -266,27 +266,16 @@ class _MockLike(Protocol):  # FIXME: Drop any members that aren't needed.
     __slots__ = ()
 
     @property
-    def called(self) -> bool: ...
-
-    @property
     def call_count(self) -> int: ...
 
     @property
     def mock_calls(self) -> _CallList: ...
-
-    def assert_called(self) -> None: ...
 
     def assert_called_once(self) -> None: ...
 
     def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
 
     def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_any_call(self, *args: Any, **kwargs: Any) -> None: ...
-
-    def assert_has_calls(
-        self, calls: Sequence[_Call], any_order: bool = False,
-    ) -> None: ...
 
     def assert_not_called(self) -> None: ...
 
