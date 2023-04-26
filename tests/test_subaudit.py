@@ -1423,6 +1423,8 @@ def test_can_listen_to_input_events(
 
     See https://docs.python.org/3/library/audit_events.html. We should be able
     to listen to any event listed there, but these tests only try a select few.
+
+    See notebooks/input_events.ipynb about builtins.input/result subtleties.
     """
     prompt = 'What... is the airspeed velocity of an unladen swallow? '
     result = 'What do you mean? An African or European swallow?'
@@ -1446,7 +1448,24 @@ def test_can_listen_to_input_events(
     assert parent.mock_calls == expected_calls
 
 
-# FIXME: Retest other common cases with audit events from the standard library.
+def test_can_listen_to_sys_addaudithook_event(
+    make_hooks: _MultiSupplier[Hook],
+    event: str,
+    make_listeners: _MultiSupplier[_MockListener],
+) -> None:
+    """
+    We can listen to the sys.addaudithook event.
+
+    See https://docs.python.org/3/library/audit_events.html. We should be able
+    to listen to any event listed there, but these tests only try a select few.
+
+    The sysaudit library backports this event to Python 3.7.
+    """
+    hook1, hook2 = make_hooks(2)
+    listener1, listener2 = make_listeners(2)
+    with hook1.listening('sys.addaudithook', listener1):
+        with hook2.listening(event, listener2):
+            listener1.assert_called_once_with()
 
 
 @pytest.mark.xfail(
