@@ -1390,6 +1390,23 @@ def test_usable_in_high_churn(
 
 
 @_xfail_no_standard_audit_events_before_3_8
+def test_can_listen_to_id_event(
+    any_hook: _AnyHook, listener: _MockListener,
+) -> None:
+    """
+    We can listen to the builtins.id event.
+
+    See https://docs.python.org/3/library/audit_events.html. We should be able
+    to listen to any event listed there, but these tests only try a select few.
+    """
+    obj = object()
+    obj_id = id(obj)
+    with any_hook.listening('builtins.id', listener):
+        id(obj)
+    listener.assert_called_once_with(obj_id)
+
+
+@_xfail_no_standard_audit_events_before_3_8
 def test_can_listen_to_open_event(
     tmp_path: pathlib.Path, any_hook: _AnyHook, listener: _MockListener,
 ) -> None:
@@ -1448,7 +1465,7 @@ def test_can_listen_to_input_events(
     assert parent.mock_calls == expected_calls
 
 
-def test_can_listen_to_sys_addaudithook_event(
+def test_can_listen_to_addaudithook_event(
     make_hooks: _MultiSupplier[Hook],
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
