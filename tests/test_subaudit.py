@@ -20,6 +20,7 @@ import datetime
 import enum
 import functools
 import io
+import platform
 import random
 import re
 import sys
@@ -1377,7 +1378,12 @@ def test_usable_in_high_churn(
         assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
-# FIXME: Also xfail on all versions of CPython (but not PyPy) and explain why.
+@pytest.mark.xfail(
+    platform.python_implementation() == 'CPython',
+    reason='CPython only raises builtins.input/result for interactive input.',
+    raises=AssertionError,
+    strict=True,
+)
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
     reason='Python has no standard audit events before 3.8.',
