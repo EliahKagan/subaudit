@@ -1313,7 +1313,7 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 
 
 @attrs.frozen
-class ChurnCounts:
+class _ChurnCounts:
     """Parameters for a churn test. (Helper for test_usable_in_high_churn.)"""
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
@@ -1336,7 +1336,7 @@ def test_usable_in_high_churn(
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """~1000 listeners with frequent subscribe/unsubscribe isn't too slow."""
-    counts = ChurnCounts(listeners=1000, delta=100, iterations=100)
+    counts = _ChurnCounts(listeners=1000, delta=100, iterations=100)
     all_listeners = make_listeners(count=counts.listeners)
     prng = random.Random(18140838203929040771)
 
