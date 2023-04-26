@@ -14,7 +14,7 @@
 """subaudit: Subscribe and unsubscribe for specific audit events."""
 
 __all__ = [
-    'ContextManagerFactory',
+    'LockContextManagerFactory',
     'audit',
     'addaudithook',
     'Hook',
@@ -39,6 +39,7 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
+    Union,
 )
 import unittest
 
@@ -50,8 +51,29 @@ else:
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
-ContextManagerFactory = Callable[[], ContextManager]  # FIXME: Type parameter?
-"""Type alias for classes or factory functions returning context managers."""
+LockContextManager = Union[ContextManager[None], ContextManager[bool]]
+"""
+Type alias for context managers whose __enter__ returns None or returns bool.
+
+Lock, RLock, and other synchronization primitives' __enter__ methods always
+return True or False, because it is possible to attempt to enter them in such a
+way that they are not entered but this is not considered an error. This is
+rarely done when they are used as context managers, but for type hints be
+correct, we must allow this.
+
+Other context managers that may make sense to use for, or instead of,
+synchronization — including the trivial contextlib.nullcontext — are
+conceptually void, always returning None.
+
+Note that this is subtly different from __enter__ having Optional[None] as its
+return type, which would mean that the same instance could return None on some
+__enter__ calls but a bool value on others. This alias makes that a type error.
+"""
+
+LockContextManagerFactory = Callable[[], LockContextManager]
+"""
+Type alias for classes or factory functions returning a LockContextManager.
+"""
 
 
 class Hook:
@@ -89,7 +111,7 @@ class Hook:
 
     __slots__ = ('_lock', '_hook_installed', '_table')
 
-    _lock: ContextManager  # FIXME: Type parameter?
+    _lock: LockContextManager
     """Mutex or other context manager used to protect subscribe/unsubscribe."""
 
     _hook_installed: bool
@@ -99,7 +121,7 @@ class Hook:
     """Table that maps each event to its listeners."""
 
     def __init__(
-        self, *, sub_lock_factory: Optional[ContextManagerFactory] = None,
+        self, *, sub_lock_factory: Optional[LockContextManagerFactory] = None,
     ) -> None:
         """
         Make an audit hook wrapper, which will use its own audit hook.

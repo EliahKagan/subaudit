@@ -1268,7 +1268,7 @@ def test_unsubscribe_never_calls_release(
     threading.RLock,
 ])
 def test_lock_accepts_common_cm(
-    cm_factory: subaudit.ContextManagerFactory,
+    cm_factory: subaudit.LockContextManagerFactory,
     maybe_raise: Callable[[], None],
     event: str,
     listener: _MockListener,
