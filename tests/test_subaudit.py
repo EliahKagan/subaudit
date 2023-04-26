@@ -20,6 +20,7 @@ import datetime
 import enum
 import functools
 import io
+import pathlib
 import platform
 import random
 import re
@@ -1377,6 +1378,28 @@ def test_usable_in_high_churn(
     with subtests.test('elapsed time not excessive'):
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
         assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
+
+
+# FIXME: Extract the mark decoration, *if* it is *exactly* duplicated.
+@pytest.mark.xfail(
+    sys.version_info < (3, 8),
+    reason='Python has no standard audit events before 3.8.',
+    raises=AssertionError,
+    strict=True,
+)
+def test_can_listen_to_open_event(
+    tmp_path: pathlib.Path, any_hook: _AnyHook, listener: _MockListener,
+) -> None:
+    """
+    We can listen to the open event.
+
+    See https://docs.python.org/3/library/audit_events.html. We should be able
+    to listen to any event listed there, but these tests only try a select few.
+    """
+    path = tmp_path / 'output.txt'
+    with any_hook.listening('open', listener):
+        path.write_text('some text')
+    listener.assert_called_with(str(path), 'w', mock.ANY)
 
 
 @pytest.mark.xfail(
