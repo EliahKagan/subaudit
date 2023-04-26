@@ -260,7 +260,7 @@ def _make_events_fixture() -> _MultiSupplier[str]:
     return _MultiSupplier(_make_event)
 
 
-class _MockLike(Protocol):  # FIXME: Drop any members that are never used.
+class _MockLike(Protocol):
     """Protocol for objects with assert_* methods and call spying we need."""
 
     # pylint: disable=missing-function-docstring  # This is a protocol.
