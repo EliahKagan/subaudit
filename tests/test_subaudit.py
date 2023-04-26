@@ -44,8 +44,8 @@ import uuid
 
 import attrs
 import clock_timer
-from mock import Mock, call
-from mock.mock import _CallList  # FIXME: Don't violate encapsulation.
+import mock
+from mock import call
 import pytest
 from pytest_mock import MockerFixture
 from pytest_subtests import SubTests
@@ -187,7 +187,7 @@ def _make_hooks_fixture() -> _MultiSupplier[Hook]:
     return _MultiSupplier(_make_hook)
 
 
-class _UnboundMethodMock(Mock):
+class _UnboundMethodMock(mock.Mock):
     """A mock that is also a descriptor, to behave like a function."""
 
     def __get__(self, instance: Any, owner: Any = None) -> Any:
@@ -203,16 +203,16 @@ class _DerivedHookFixture:
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
-    subscribe_method: Mock
+    subscribe_method: mock.Mock
     """Mock of the unbound subscribe method."""
 
-    unsubscribe_method: Mock
+    unsubscribe_method: mock.Mock
     """Mock of the unbound unsubscribe method."""
 
-    listening_method: Mock
+    listening_method: mock.Mock
     """Mock of the unbound listening context manager method."""
 
-    extracting_method: Mock
+    extracting_method: mock.Mock
     """Mock of the unbound extracting context manager method."""
 
     instance: Hook
@@ -272,8 +272,9 @@ class _MockLike(Protocol):  # FIXME: Drop any members that are never used.
     @property
     def call_count(self) -> int: ...
 
+    # FIXME: Name the return type in a way that does not violate encapsulation.
     @property
-    def mock_calls(self) -> _CallList: ...
+    def mock_calls(self) -> mock.mock._CallList: ...
 
     def assert_called_once(self) -> None: ...
 
@@ -306,7 +307,7 @@ def _null_listener(*_: Any) -> None:
 
 def _make_listener() -> _MockListener:
     """Create a mock listener."""
-    return Mock(spec=_null_listener)
+    return mock.Mock(spec=_null_listener)
 
 
 @pytest.fixture(name='listener')
@@ -332,10 +333,10 @@ def _equal_listeners_fixture(
         return getattr(other, 'group_key', None) is group_key
 
     def make_mock() -> _MockListener:
-        return Mock(
+        return mock.Mock(
             spec=_null_listener,
-            __eq__=Mock(side_effect=in_group),
-            __hash__=Mock(return_value=hash(group_key)),
+            __eq__=mock.Mock(side_effect=in_group),
+            __hash__=mock.Mock(return_value=hash(group_key)),
             group_key=group_key,
         )
 
@@ -374,7 +375,7 @@ class _MockExtractor(_MockLike, Protocol):
 @pytest.fixture(name='extractor')
 def _extractor_fixture() -> _MockExtractor:
     """Mock extractor (pytest fixture). Returns a tuple of its arguments."""
-    return Mock(wraps=_Extract.from_separate_args)
+    return mock.Mock(wraps=_Extract.from_separate_args)
 
 
 @attrs.frozen
@@ -412,7 +413,7 @@ class _MockLockFixture:
 
     # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
-    lock_factory: Mock
+    lock_factory: mock.Mock
     """The mock lock (mutex). This does not do any real locking."""
 
     hook: Hook
@@ -712,17 +713,17 @@ def test_instance_construction_does_not_add_audit_hook(
     mocker: MockerFixture,
 ) -> None:
     """Hook is lazy, not adding an audit hook before a listener subscribes."""
-    mock = mocker.patch('subaudit.addaudithook')
+    addaudithook = mocker.patch('subaudit.addaudithook')
     Hook()
-    mock.assert_not_called()
+    addaudithook.assert_not_called()
 
 
 def test_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture, hook: Hook, event: str, listener: _MockListener,
 ) -> None:
-    mock = mocker.patch('subaudit.addaudithook')
+    addaudithook = mocker.patch('subaudit.addaudithook')
     hook.subscribe(event, listener)
-    mock.assert_called_once()
+    addaudithook.assert_called_once()
 
 
 def test_instance_does_not_add_audit_hook_on_second_subscribe(
@@ -734,9 +735,9 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
     event1, event2 = make_events(2)
     listener1, listener2 = make_listeners(2)
     hook.subscribe(event1, listener1)
-    mock = mocker.patch('subaudit.addaudithook')
+    addaudithook = mocker.patch('subaudit.addaudithook')
     hook.subscribe(event2, listener2)
-    mock.assert_not_called()
+    addaudithook.assert_not_called()
 
 
 def test_second_instance_adds_audit_hook_on_first_subscribe(
@@ -750,9 +751,9 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
     event1, event2 = make_events(2)
     listener1, listener2 = make_listeners(2)
     hook1.subscribe(event1, listener1)
-    mock = mocker.patch('subaudit.addaudithook')
+    addaudithook = mocker.patch('subaudit.addaudithook')
     hook2.subscribe(event2, listener2)
-    mock.assert_called_once()
+    addaudithook.assert_called_once()
 
 
 def test_listening_does_not_observe_before_enter(
@@ -1406,7 +1407,7 @@ def test_can_listen_to_input_events(
     result = 'What do you mean? An African or European swallow?'
     expected_calls = [call.listen_prompt(prompt), call.listen_result(result)]
 
-    parent = Mock()  # To assert the relative order of calls to child mocks.
+    parent = mock.Mock()  # To assert calls to child mocks in a specific order.
     parent.listen_prompt, parent.listen_result = make_listeners(2)
 
     with any_hook.listening('builtins.input', parent.listen_prompt):
@@ -1434,7 +1435,7 @@ def test_can_listen_to_input_events(
     strict=True,
 )
 def test_skip_if_unavailable_skips_before_3_8() -> None:
-    wrapped = Mock(wraps=lambda: None)
+    wrapped = mock.Mock(wraps=lambda: None)
     wrapper = subaudit.skip_if_unavailable(wrapped)
     with pytest.raises(unittest.SkipTest):
         wrapper()
@@ -1447,7 +1448,7 @@ def test_skip_if_unavailable_skips_before_3_8() -> None:
     strict=True,
 )
 def test_skip_if_unavailable_does_not_skip_since_3_8() -> None:
-    wrapped = Mock(wraps=lambda: None)
+    wrapped = mock.Mock(wraps=lambda: None)
     wrapper = subaudit.skip_if_unavailable(wrapped)
     wrapper()
     wrapped.assert_called_once_with()
