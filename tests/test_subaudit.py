@@ -1390,7 +1390,7 @@ def test_usable_in_high_churn(
     raises=AssertionError,
     strict=True,
 )
-def test_can_listen_to_standard_events_for_input(
+def test_can_listen_to_input_events(
     capsys: pytest.CaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     any_hook: _AnyHook,
