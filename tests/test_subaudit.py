@@ -98,30 +98,24 @@ class _MockListener(_MockLike, Protocol):
     def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
 
 
-def _null_listener(*_: Any) -> None:
-    """Listener that does nothing, for spec-ing."""
-
-
-def _make_listener() -> _MockListener:
-    """Create a mock listener."""
-    return mock.Mock(spec=_null_listener)
-
-
 @pytest.fixture(name='listener')
-def _listener_fixture() -> _MockListener:
+def _listener_fixture(null_listener: Callable[..., None]) -> _MockListener:
     """Mock listener (pytest fixture)."""
-    return _make_listener()
+    return mock.Mock(spec=null_listener)
 
 
 @pytest.fixture(name='make_listeners')
-def _make_listeners_fixture() -> MultiSupplier[_MockListener]:
+def _make_listeners_fixture(
+    null_listener: Callable[..., None],
+) -> MultiSupplier[_MockListener]:
     """Supplier of multiple mock listeners (pytest fixture)."""
-    return MultiSupplier(_make_listener)
+    return MultiSupplier(lambda: mock.Mock(spec=null_listener))
 
 
 @pytest.fixture(name='equal_listeners', params=[2, 3, 5])
 def _equal_listeners_fixture(
     request: pytest.FixtureRequest,
+    null_listener: Callable[..., None],
 ) -> Tuple[_MockListener, ...]:
     """Listeners that are different objects but all equal (pytest fixture)."""
     group_key = object()
@@ -131,7 +125,7 @@ def _equal_listeners_fixture(
 
     def make_mock() -> _MockListener:
         return mock.Mock(
-            spec=_null_listener,
+            spec=null_listener,
             __eq__=mock.Mock(side_effect=in_group),
             __hash__=mock.Mock(return_value=hash(group_key)),
             group_key=group_key,

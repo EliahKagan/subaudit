@@ -290,3 +290,14 @@ def make_events_fixture() -> MultiSupplier[str]:
     argument passed.
     """
     return MultiSupplier(_make_event)
+
+
+@pytest.fixture(name='null_listener')
+def null_listener_fixture() -> Callable[..., None]:
+    """
+    Listener that does nothing, for spec-ing.
+
+    This fixture is for building other fixtures. It provides a function they
+    can pass as a ``spec`` argument for ``Mock``, ``MagicMock``, patchers, etc.
+    """
+    return lambda *_: None
