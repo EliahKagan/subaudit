@@ -31,12 +31,10 @@ from typing import (
     Any,
     Callable,
     Generator,
-    Generic,
     List,
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     cast,
 )
 import unittest
@@ -52,47 +50,7 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
-from tests.conftest import AnyHook, MaybeRaiser
-
-_R_co = TypeVar('_R_co', covariant=True)
-"""Class-level output type variable (covariant)."""
-
-
-class _MultiSupplier(Generic[_R_co]):
-    """Adapter of a single-item supplier to produce multiple items."""
-
-    __slots__ = ('_supplier',)
-
-    _supplier: Callable[[], _R_co]
-
-    def __init__(self, supplier: Callable[[], _R_co]) -> None:
-        """Create a maker from the given single-item supplier."""
-        self._supplier = supplier
-
-    def __repr__(self) -> str:
-        """Vaguely code-like representation for debugging."""
-        return f'{type(self).__name__}({self._supplier!r})'
-
-    def __call__(self, count: int) -> Tuple[_R_co, ...]:
-        """Make the specific number (``count``) of things."""
-        return tuple(self._supplier() for _ in range(count))
-
-
-def _make_hook() -> subaudit.Hook:
-    """Create a ``Hook`` instance."""
-    return subaudit.Hook()
-
-
-@pytest.fixture(name='hook')
-def _hook_fixture() -> subaudit.Hook:
-    """``Hook`` instance (pytest fixture)."""
-    return _make_hook()
-
-
-@pytest.fixture(name='make_hooks')
-def _make_hooks_fixture() -> _MultiSupplier[subaudit.Hook]:
-    """Supplier of multiple ``Hook`` instances (pytest fixture)."""
-    return _MultiSupplier(_make_hook)
+from tests.conftest import AnyHook, MaybeRaiser, MultiSupplier
 
 
 class _UnboundMethodMock(mock.Mock):
@@ -165,11 +123,11 @@ def _event_fixture() -> str:
 
 
 @pytest.fixture(name='make_events')
-def _make_events_fixture() -> _MultiSupplier[str]:
+def _make_events_fixture() -> MultiSupplier[str]:
     """
     Supplier of multiple randomly generated fake event names (pytest fixture).
     """
-    return _MultiSupplier(_make_event)
+    return MultiSupplier(_make_event)
 
 
 class _MockLike(Protocol):
@@ -229,9 +187,9 @@ def _listener_fixture() -> _MockListener:
 
 
 @pytest.fixture(name='make_listeners')
-def _make_listeners_fixture() -> _MultiSupplier[_MockListener]:
+def _make_listeners_fixture() -> MultiSupplier[_MockListener]:
     """Supplier of multiple mock listeners (pytest fixture)."""
-    return _MultiSupplier(_make_listener)
+    return MultiSupplier(_make_listener)
 
 
 @pytest.fixture(name='equal_listeners', params=[2, 3, 5])
@@ -453,7 +411,7 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 def test_subscribed_listener_does_not_observe_other_event(
     any_hook: AnyHook,
-    make_events: _MultiSupplier[str],
+    make_events: MultiSupplier[str],
     listener: _MockListener,
 ) -> None:
     """Subscribing to one event doesn't observe other events."""
@@ -465,7 +423,7 @@ def test_subscribed_listener_does_not_observe_other_event(
 
 def test_listener_can_subscribe_multiple_events(
     any_hook: AnyHook,
-    make_events: _MultiSupplier[str],
+    make_events: MultiSupplier[str],
     listener: _MockListener,
 ) -> None:
     event1, event2 = make_events(2)
@@ -479,7 +437,7 @@ def test_listener_can_subscribe_multiple_events(
 def test_listeners_called_in_subscribe_order(
     any_hook: AnyHook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3 = make_listeners(3)
@@ -498,7 +456,7 @@ def test_listeners_called_in_subscribe_order(
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
     any_hook: AnyHook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2, listener3, listener4 = make_listeners(4)
@@ -521,7 +479,7 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
 def test_listeners_called_in_new_order_after_resubscribe(
     any_hook: AnyHook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     ordering: List[int] = []
     listener1, listener2 = make_listeners(2)
@@ -591,7 +549,7 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
 def test_unsubscribe_keeps_other_listener(
     any_hook: AnyHook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     """Unsubscribing one listener doesn't prevent another from observing."""
     listener1, listener2 = make_listeners(2)
@@ -630,7 +588,7 @@ def test_unsubscribe_keeps_non_last_equal_listeners(
 
 
 def test_cannot_unsubscribe_listener_from_other_hook(
-    make_hooks: _MultiSupplier[subaudit.Hook],
+    make_hooks: MultiSupplier[subaudit.Hook],
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -665,8 +623,8 @@ def test_instance_adds_audit_hook_on_first_subscribe(
 def test_instance_does_not_add_audit_hook_on_second_subscribe(
     mocker: MockerFixture,
     hook: subaudit.Hook,
-    make_events: _MultiSupplier[str],
-    make_listeners: _MultiSupplier[_MockListener],
+    make_events: MultiSupplier[str],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     event1, event2 = make_events(2)
     listener1, listener2 = make_listeners(2)
@@ -678,9 +636,9 @@ def test_instance_does_not_add_audit_hook_on_second_subscribe(
 
 def test_second_instance_adds_audit_hook_on_first_subscribe(
     mocker: MockerFixture,
-    make_hooks: _MultiSupplier[subaudit.Hook],
-    make_events: _MultiSupplier[str],
-    make_listeners: _MultiSupplier[_MockListener],
+    make_hooks: MultiSupplier[subaudit.Hook],
+    make_events: MultiSupplier[str],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     """Different ``Hook`` objects do not share the same audit hook."""
     hook1, hook2 = make_hooks(2)
@@ -1068,7 +1026,7 @@ def test_repr_shows_no_events_after_done_listening(
 
 def test_repr_shows_both_events_when_nested_listening(
     hook: subaudit.Hook,
-    make_events: _MultiSupplier[str],
+    make_events: MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
 ) -> None:
@@ -1080,7 +1038,7 @@ def test_repr_shows_both_events_when_nested_listening(
 
 def test_repr_shows_one_event_after_done_listening_to_second(
     hook: subaudit.Hook,
-    make_events: _MultiSupplier[str],
+    make_events: MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
 ) -> None:
@@ -1093,7 +1051,7 @@ def test_repr_shows_one_event_after_done_listening_to_second(
 
 def test_repr_shows_no_events_after_done_nested_listening(
     hook: subaudit.Hook,
-    make_events: _MultiSupplier[str],
+    make_events: MultiSupplier[str],
     listener: _MockListener,
     assert_repr_summary: _ReprAsserter,
 ) -> None:
@@ -1107,7 +1065,7 @@ def test_repr_shows_no_events_after_done_nested_listening(
 def test_repr_shows_one_event_with_multiple_listeners_as_one(
     hook: subaudit.Hook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
     assert_repr_summary: _ReprAsserter,
 ) -> None:
     listener1, listener2 = make_listeners(2)
@@ -1275,7 +1233,7 @@ def test_usable_in_high_churn(
     subtests: SubTests,
     hook: subaudit.Hook,
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     """
     ~1000 listeners with frequent ``subscribe``/``unsubscribe`` isn't too slow.
@@ -1370,7 +1328,7 @@ def test_can_listen_to_input_events(
     capsys: pytest.CaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     any_hook: AnyHook,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     """
     We can listen to ``builtins.input`` and ``builtins.input/result`` events.
@@ -1404,9 +1362,9 @@ def test_can_listen_to_input_events(
 
 
 def test_can_listen_to_addaudithook_event(
-    make_hooks: _MultiSupplier[subaudit.Hook],
+    make_hooks: MultiSupplier[subaudit.Hook],
     event: str,
-    make_listeners: _MultiSupplier[_MockListener],
+    make_listeners: MultiSupplier[_MockListener],
 ) -> None:
     """
     We can listen to the ``sys.addaudithook`` event.

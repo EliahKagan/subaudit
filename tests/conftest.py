@@ -5,9 +5,21 @@ __all__ = [
     'maybe_raise',
     'AnyHook',
     'any_hook',
+    'MultiSupplier',
+    'hook',
+    'make_hooks',
 ]
 
-from typing import Callable, ClassVar, ContextManager, List, Type, TypeVar
+from typing import (
+    Callable,
+    ClassVar,
+    ContextManager,
+    Generic,
+    List,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 import attrs
 import pytest
@@ -17,6 +29,9 @@ import subaudit
 
 _R = TypeVar('_R')
 """Function-level output type variable."""
+
+_R_co = TypeVar('_R_co', covariant=True)
+"""Class-level output type variable (covariant)."""
 
 
 class _FakeError(Exception):
@@ -120,3 +135,40 @@ def any_hook(request: pytest.FixtureRequest) -> AnyHook:
     This multiplies tests, covering new instances and module-level functions.
     """
     return request.param()
+
+
+class MultiSupplier(Generic[_R_co]):
+    """Adapter of a single-item supplier to produce multiple items."""
+
+    __slots__ = ('_supplier',)
+
+    _supplier: Callable[[], _R_co]
+
+    def __init__(self, supplier: Callable[[], _R_co]) -> None:
+        """Create a maker from the given single-item supplier."""
+        self._supplier = supplier
+
+    def __repr__(self) -> str:
+        """Vaguely code-like representation for debugging."""
+        return f'{type(self).__name__}({self._supplier!r})'
+
+    def __call__(self, count: int) -> Tuple[_R_co, ...]:
+        """Make the specific number (``count``) of things."""
+        return tuple(self._supplier() for _ in range(count))
+
+
+def _make_hook() -> subaudit.Hook:
+    """Create a ``Hook`` instance."""
+    return subaudit.Hook()
+
+
+@pytest.fixture
+def hook() -> subaudit.Hook:
+    """``Hook`` instance (pytest fixture)."""
+    return _make_hook()
+
+
+@pytest.fixture
+def make_hooks() -> MultiSupplier[subaudit.Hook]:
+    """Supplier of multiple ``Hook`` instances (pytest fixture)."""
+    return MultiSupplier(_make_hook)
