@@ -234,11 +234,6 @@ class DerivedHookFixture:
     """Instance of the ``Hook`` subclass whose methods are mocked."""
 
 
-# FIXME: Decide if this really should be defined here. If listening and
-#        extracting are tested in the same module as each other, then I should
-#        look into removing the one dependence of a repr test on this fixture
-#        (which was sort of a questionable choice anyway) and moving this and
-#        supporting classes into the module of listening and extracting tests.
 @pytest.fixture(name='derived_hook')
 def derived_hook_fixture() -> DerivedHookFixture:
     """
