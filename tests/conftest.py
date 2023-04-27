@@ -141,9 +141,10 @@ class _TopLevel:
 @pytest.fixture(params=[subaudit.Hook, _TopLevel])
 def any_hook(request: pytest.FixtureRequest) -> AnyHook:
     """
-    ``Hook`` instance or wrapper for the top-level functions (pytest fixture).
+    ``Hook`` instance or wrapper for the top-level functions.
 
-    This multiplies tests, covering new instances and module-level functions.
+    This fixture multiplies tests, covering both new instances of ``Hook`` and
+    the module-level functions that use an existing instance.
     """
     return request.param()
 
@@ -175,13 +176,22 @@ def _make_hook() -> subaudit.Hook:
 
 @pytest.fixture
 def hook() -> subaudit.Hook:
-    """``Hook`` instance (pytest fixture)."""
+    """
+    ``Hook`` instance.
+
+    This fixture provides a newly created ``Hook`` instance.
+    """
     return _make_hook()
 
 
 @pytest.fixture
 def make_hooks() -> MultiSupplier[subaudit.Hook]:
-    """Supplier of multiple ``Hook`` instances (pytest fixture)."""
+    """
+    Supplier of multiple ``Hook`` instances.
+
+    This fixture provides a callable object that returns a tuple of separate,
+    new ``Hook`` instances, whose length is specified by the argument passed.
+    """
     return MultiSupplier(_make_hook)
 
 
@@ -224,7 +234,21 @@ class DerivedHookFixture:
 #        supporting classes into the module of listening and extracting tests.
 @pytest.fixture
 def derived_hook() -> DerivedHookFixture:
-    """Make a new ``Hook`` subclass with methods mocked (pytest fixture)."""
+    """
+    Make a new ``Hook`` subclass with methods mocked.
+
+    This fixture creates a new ``Hook`` subclass, separate from any other
+    classes, including prior subclasses it has created elsewhere. This class's
+    methods are mocked in such a way that, when they are called on an instance,
+    they receive and record the ``self`` parameter (which differs from the
+    behavior of a plain ``Mock`` object assigned as a class attribute and
+    called through an instance). It also creates one instance of the new class.
+
+    The methods can be accessed as the ``subscribe_method``,
+    ``unsubscribe_method``, ``listening_method``, and ``extracting_method``
+    attributes on the fixture object, while the instance can be accessed as the
+    ``instance`` attribute.
+    """
     subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
     unsubscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.unsubscribe)
     listening_method = _UnboundMethodMock(wraps=subaudit.Hook.listening)
@@ -253,13 +277,22 @@ def _make_event() -> str:
 
 @pytest.fixture
 def event() -> str:
-    """Randomly generated fake event name (pytest fixture)."""
+    """
+    Randomly generated fake event name.
+
+    This fixture provides a string for use as an event name, incorporating a
+    new randomly generated UUID. (The probability of uniqueness is very high.)
+    """
     return _make_event()
 
 
 @pytest.fixture
 def make_events() -> MultiSupplier[str]:
     """
-    Supplier of multiple randomly generated fake event names (pytest fixture).
+    Supplier of multiple randomly generated fake event names.
+
+    This fixture provides a callable object that returns a tuple of separate
+    new randomly generated fake event names, whose length is specified by the
+    argument passed.
     """
     return MultiSupplier(_make_event)
