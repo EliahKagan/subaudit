@@ -911,29 +911,3 @@ def test_can_listen_to_addaudithook_event(
     with hook1.listening('sys.addaudithook', listener1):
         with hook2.listening(event, listener2):
             listener1.assert_called_once_with()
-
-
-@pytest.mark.xfail(
-    sys.version_info >= (3, 8),
-    reason='Python 3.8 has PEP 578, so @skip_if_unavailable should not skip.',
-    raises=pytest.fail.Exception,
-    strict=True,
-)
-def test_skip_if_unavailable_skips_before_3_8() -> None:
-    wrapped = mock.Mock(wraps=lambda: None)
-    wrapper = subaudit.skip_if_unavailable(wrapped)
-    with pytest.raises(unittest.SkipTest):
-        wrapper()
-
-
-@pytest.mark.xfail(
-    sys.version_info < (3, 8),
-    reason='Python < 3.8 lacks PEP 578, so @skip_if_unavailable should skip.',
-    raises=AssertionError,
-    strict=True,
-)
-def test_skip_if_unavailable_does_not_skip_since_3_8() -> None:
-    wrapped = mock.Mock(wraps=lambda: None)
-    wrapper = subaudit.skip_if_unavailable(wrapped)
-    wrapper()
-    wrapped.assert_called_once_with()
