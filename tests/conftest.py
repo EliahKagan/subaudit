@@ -234,13 +234,13 @@ def derived_hook_fixture() -> DerivedHookFixture:
     This fixture creates a new ``Hook`` subclass, separate from any other
     classes, including prior subclasses it has created elsewhere. This class's
     methods are mocked in such a way that, when they are called on an instance,
-    they receive and record the ``self`` parameter (which differs from the
-    behavior of a plain ``Mock`` object assigned as a class attribute and
-    called through an instance). It also creates one instance of the new class.
+    they receive and record the ``self`` argument, as well as others. (This
+    differs from the behavior of a plain ``Mock`` or ``MagicMock`` on a class,
+    when called through an instance.) It also instantiates the new class.
 
     The methods can be accessed as the ``subscribe_method``,
     ``unsubscribe_method``, ``listening_method``, and ``extracting_method``
-    attributes on the fixture object, while the instance can be accessed as the
+    attributes on the fixture object. The instance can be accessed as the
     ``instance`` attribute.
     """
     subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
