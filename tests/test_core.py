@@ -12,12 +12,21 @@
 # PERFORMANCE OF THIS SOFTWARE.
 
 """
-Tests for the ``subaudit`` module.
+Tests of core ``subaudit`` functionality.
 
-These are the tests not yet moved moved into some more specific test module.
+This includes tests of ``subscribe`` and ``unsubscribe``, except how they lock,
+which is tested in ``test_lock.py`` instead.
+
+This also includes tests of ``Hook`` construction, specifically that creating a
+``Hook`` instance does not install an audit hook before the first subscription.
+Tests of the ``sub_lock_factory`` parameter on construction are also in
+``test_lock.py`` rather that here.
+
+Note that the core functionality should not be confused with the functionality
+that code using the ``subaudit`` library is most likely to use directly. The
+best way to use this library is often to use ``subaudit.listening``. See
+``test_listening.py`` (and ``test_misc.py``).
 """
-
-# FIXME: Rename this test_core.py.
 
 import functools
 from typing import Callable, List, Tuple
