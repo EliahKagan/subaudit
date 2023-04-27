@@ -15,13 +15,13 @@
 
 import contextlib
 from typing import Any, List, Optional, Tuple
-from typing_extensions import Protocol, Self
 
 import attrs
 import mock
 from mock import call
 import pytest
 from pytest_subtests import SubTests
+from typing_extensions import Protocol, Self
 
 import subaudit
 import tests.conftest as ct
