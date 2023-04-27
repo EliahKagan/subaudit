@@ -58,6 +58,9 @@ class MaybeRaiser:
             raise self.Exception
 
 
+# FIXME: Decide if this really should be defined here. If listening and
+#        extracting are tested in the same module as each other, I think this
+#        (and its supporting classes) can be moved to that module.
 @pytest.fixture(params=[False, True])
 def maybe_raise(request: pytest.FixtureRequest) -> Callable[[], None]:
     """
