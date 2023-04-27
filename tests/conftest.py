@@ -163,11 +163,6 @@ class MultiSupplier(Generic[_R_co]):
         return tuple(self._supplier() for _ in range(count))
 
 
-def _make_hook() -> subaudit.Hook:
-    """Create a ``Hook`` instance."""
-    return subaudit.Hook()
-
-
 @pytest.fixture(name='hook')
 def hook_fixture() -> subaudit.Hook:
     """
@@ -175,7 +170,7 @@ def hook_fixture() -> subaudit.Hook:
 
     This fixture provides a newly created ``Hook`` instance.
     """
-    return _make_hook()
+    return subaudit.Hook()
 
 
 @pytest.fixture(name='make_hooks')
@@ -186,7 +181,7 @@ def make_hooks_fixture() -> MultiSupplier[subaudit.Hook]:
     This fixture provides a callable object that returns a tuple of separate,
     new ``Hook`` instances, whose length is specified by the argument passed.
     """
-    return MultiSupplier(_make_hook)
+    return MultiSupplier(hook_fixture.__wrapped__)
 
 
 class _UnboundMethodMock(mock.Mock):
@@ -264,11 +259,6 @@ def derived_hook_fixture() -> DerivedHookFixture:
     )
 
 
-def _make_event() -> str:
-    """Create a randomly generated fake event name."""
-    return f'test-subaudit-{uuid.uuid4()}'
-
-
 @pytest.fixture(name='event')
 def event_fixture() -> str:
     """
@@ -277,7 +267,7 @@ def event_fixture() -> str:
     This fixture provides a string for use as an event name, incorporating a
     new randomly generated UUID. (The probability of uniqueness is very high.)
     """
-    return _make_event()
+    return f'test-subaudit-{uuid.uuid4()}'
 
 
 @pytest.fixture(name='make_events')
@@ -289,7 +279,7 @@ def make_events_fixture() -> MultiSupplier[str]:
     new randomly generated fake event names, whose length is specified by the
     argument passed.
     """
-    return MultiSupplier(_make_event)
+    return MultiSupplier(event_fixture.__wrapped__)
 
 
 @pytest.fixture(name='null_listener')
