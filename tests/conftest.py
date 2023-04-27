@@ -22,6 +22,7 @@ __all__ = [
     'MockListener',
 ]
 
+import enum
 import functools
 from typing import (
     Any,
@@ -55,34 +56,41 @@ class _FakeError(Exception):
     """Fake exception for testing."""
 
 
-@attrs.frozen
-class MaybeRaiser:
+@enum.unique
+class MaybeRaiser(enum.Enum):
     """
     A callable that raises a fake error or does nothing.
 
     The ``maybe_raise`` fixture returns an instance of this.
     """
 
-    Exception: ClassVar[Type[_FakeError]] = _FakeError
+    Exception: ClassVar[Type[_FakeError]]  # pylint: disable=invalid-name
     """The exception type to raise (when raising at all)."""
 
-    raises: bool
-    """Whether to raise an exception or not, when called."""
+    NO_RAISE = enum.auto()
+    """Does not raise (it does nothing) when called."""
+
+    RAISE = enum.auto()
+    """Raises when called."""
 
     def __call__(self) -> None:
         """Maybe raise an exception."""
-        if self.raises:
+        if self is self.RAISE:
             raise self.Exception
 
 
-@pytest.fixture(params=[False, True])
+# Bind Exception after the class is created, so it's not treated as a value.
+MaybeRaiser.Exception = _FakeError
+
+
+@pytest.fixture(params=[MaybeRaiser.NO_RAISE, MaybeRaiser.RAISE])
 def maybe_raise(request: pytest.FixtureRequest) -> MaybeRaiser:
     """
     An object that, when called, either raises ``_FakeError`` or does nothing.
 
     This fixture multiplies tests, covering raising and non-raising cases.
     """
-    return MaybeRaiser(request.param)
+    return request.param
 
 
 class AnyHook(Protocol):
