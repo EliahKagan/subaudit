@@ -11,7 +11,16 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-"""Fixtures and helpers used in multiple test modules."""
+"""
+Fixtures used in multiple test modules.
+
+This contains fixture functions, and any needed return types for annotating
+tests that (and other fixtures) that uses the fixtures. Because pytest takes
+care of making fixures available, only the return types should be explicitly
+accessed in, or imported from, this module.
+
+Any other test helpers used in multiple modules are in ``tests/_helpers.py``.
+"""
 
 __all__ = [
     'MaybeRaiser',
@@ -44,6 +53,7 @@ import pytest
 from typing_extensions import Protocol
 
 import subaudit
+from tests._helpers import ShortStrEnum
 
 _R = TypeVar('_R')
 """Function-level output type variable."""
@@ -57,7 +67,7 @@ class _FakeError(Exception):
 
 
 @enum.unique
-class MaybeRaiser(enum.Enum):
+class MaybeRaiser(ShortStrEnum):
     """
     A callable that raises a fake error or does nothing.
 

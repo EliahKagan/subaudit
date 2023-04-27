@@ -25,6 +25,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import subaudit
+from tests._helpers import ShortStrEnum
 import tests.conftest as ct
 
 
@@ -42,7 +43,7 @@ class _MockLockFixture:
 
 
 @enum.unique
-class _Scope(enum.Enum):
+class _Scope(ShortStrEnum):
     """
     Ways to supply a mock lock to a ``Hook``: pass locally or patch globally.
     """
