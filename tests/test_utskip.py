@@ -14,10 +14,10 @@
 """Tests of the ``@skip_if_unavailable`` decorator."""
 
 import sys
+import unittest
 
 import mock
 import pytest
-import unittest
 
 import subaudit
 
