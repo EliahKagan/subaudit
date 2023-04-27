@@ -349,7 +349,11 @@ class MockListener(MockLike, Protocol):
 
 @pytest.fixture(name='listener')
 def listener_fixture(null_listener: Callable[..., None]) -> MockListener:
-    """Mock listener (pytest fixture)."""
+    """
+    Mock listener.
+
+    This fixture provides a mock suitable for use as a listener.
+    """
     return mock.Mock(spec=null_listener)
 
 
@@ -357,5 +361,10 @@ def listener_fixture(null_listener: Callable[..., None]) -> MockListener:
 def make_listeners_fixture(
     null_listener: Callable[..., None],
 ) -> MultiSupplier[MockListener]:
-    """Supplier of multiple mock listeners (pytest fixture)."""
+    """
+    Supplier of multiple mock listeners.
+
+    This fixture provides a callable object that returns a tuple of separate
+    mocks suitable for use as listeners.
+    """
     return MultiSupplier(lambda: mock.Mock(spec=null_listener))

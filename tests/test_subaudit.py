@@ -53,9 +53,9 @@ from tests.conftest import (
     AnyHook,
     DerivedHookFixture,
     MaybeRaiser,
-    MultiSupplier,
     MockLike,
     MockListener,
+    MultiSupplier,
 )
 
 
