@@ -27,7 +27,7 @@ def main() -> None:
         result = input('Should read from original stdin: ')
         print(f'Got: {result!r}')
 
-    print(f'{extracts=}')
+    print(f'extracts={extracts!r}')  # f-strings in 3.7 don't support {var=}.
 
 
 if __name__ == '__main__':

@@ -15,8 +15,9 @@ def main() -> None:
     with subaudit.extracting('builtins.input/result', lambda x: x) as extracts:
         result = input('Input: ')
 
-    print(f'{result=}')
-    print(f'{extracts=}')
+    # f-strings in 3.7 don't support {var=}.
+    print(f'result={result!r}')
+    print(f'extracts={extracts!r}')
 
 
 if __name__ == '__main__':
