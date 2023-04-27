@@ -8,9 +8,13 @@ __all__ = [
     'MultiSupplier',
     'hook',
     'make_hooks',
+    'DerivedHookFixture',
+    'derived_hook',
 ]
 
+import functools
 from typing import (
+    Any,
     Callable,
     ClassVar,
     ContextManager,
@@ -22,6 +26,7 @@ from typing import (
 )
 
 import attrs
+import mock
 import pytest
 from typing_extensions import Protocol
 
@@ -60,7 +65,7 @@ class MaybeRaiser:
 
 # FIXME: Decide if this really should be defined here. If listening and
 #        extracting are tested in the same module as each other, I think this
-#        (and its supporting classes) can be moved to that module.
+#        and its supporting classes can be moved to that module.
 @pytest.fixture(params=[False, True])
 def maybe_raise(request: pytest.FixtureRequest) -> Callable[[], None]:
     """
@@ -175,3 +180,64 @@ def hook() -> subaudit.Hook:
 def make_hooks() -> MultiSupplier[subaudit.Hook]:
     """Supplier of multiple ``Hook`` instances (pytest fixture)."""
     return MultiSupplier(_make_hook)
+
+
+class _UnboundMethodMock(mock.Mock):
+    """A ``Mock`` that is also a descriptor, to behave like a function."""
+
+    def __get__(self, instance: Any, owner: Any = None) -> Any:
+        """When accessed through an instance, produce a "bound method"."""
+        return self if instance is None else functools.partial(self, instance)
+
+
+@attrs.frozen
+class DerivedHookFixture:
+    """
+    A newly created ``Hook`` subclass's method mocks, and an instance.
+
+    This is what the ``derived_hook`` fixture provides.
+    """
+
+    subscribe_method: mock.Mock
+    """Mock of the unbound ``subscribe`` method."""
+
+    unsubscribe_method: mock.Mock
+    """Mock of the unbound ``unsubscribe`` method."""
+
+    listening_method: mock.Mock
+    """Mock of the unbound ``listening`` context manager method."""
+
+    extracting_method: mock.Mock
+    """Mock of the unbound ``extracting`` context manager method."""
+
+    instance: subaudit.Hook
+    """Instance of the ``Hook`` subclass whose methods are mocked."""
+
+
+# FIXME: Decide if this really should be defined here. If listening and
+#        extracting are tested in the same module as each other, then I should
+#        look into removing the one dependence of a repr test on this fixture
+#        (which was sort of a questionable choice anyway) and moving this and
+#        supporting classes into the module of listening and extracting tests.
+@pytest.fixture
+def derived_hook() -> DerivedHookFixture:
+    """Make a new ``Hook`` subclass with methods mocked (pytest fixture)."""
+    subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
+    unsubscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.unsubscribe)
+    listening_method = _UnboundMethodMock(wraps=subaudit.Hook.listening)
+    extracting_method = _UnboundMethodMock(wraps=subaudit.Hook.extracting)
+
+    class MockedSubscribeUnsubscribeHook(subaudit.Hook):
+        """``Hook`` subclass with mocked methods, for a single test."""
+        subscribe = subscribe_method
+        unsubscribe = unsubscribe_method
+        listening = listening_method
+        extracting = extracting_method
+
+    return DerivedHookFixture(
+        subscribe_method=subscribe_method,
+        unsubscribe_method=unsubscribe_method,
+        listening_method=listening_method,
+        extracting_method=extracting_method,
+        instance=MockedSubscribeUnsubscribeHook(),
+    )

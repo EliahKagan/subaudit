@@ -50,65 +50,12 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
-from tests.conftest import AnyHook, MaybeRaiser, MultiSupplier
-
-
-class _UnboundMethodMock(mock.Mock):
-    """A ``Mock`` that is also a descriptor, to behave like a function."""
-
-    def __get__(self, instance: Any, owner: Any = None) -> Any:
-        """When accessed through an instance, produce a "bound method"."""
-        return self if instance is None else functools.partial(self, instance)
-
-
-@attrs.frozen
-class _DerivedHookFixture:
-    """
-    A newly created ``Hook`` subclass's method mocks, and an instance.
-
-    This is what the ``derived_hook`` fixture provides.
-    """
-
-    # pylint: disable=too-few-public-methods  # This is an attrs data class.
-
-    subscribe_method: mock.Mock
-    """Mock of the unbound ``subscribe`` method."""
-
-    unsubscribe_method: mock.Mock
-    """Mock of the unbound ``unsubscribe`` method."""
-
-    listening_method: mock.Mock
-    """Mock of the unbound ``listening`` context manager method."""
-
-    extracting_method: mock.Mock
-    """Mock of the unbound ``extracting`` context manager method."""
-
-    instance: subaudit.Hook
-    """Instance of the ``Hook`` subclass whose methods are mocked."""
-
-
-@pytest.fixture(name='derived_hook')
-def _derived_hook_fixture() -> _DerivedHookFixture:
-    """Make a new ``Hook`` subclass with methods mocked (pytest fixture)."""
-    subscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.subscribe)
-    unsubscribe_method = _UnboundMethodMock(wraps=subaudit.Hook.unsubscribe)
-    listening_method = _UnboundMethodMock(wraps=subaudit.Hook.listening)
-    extracting_method = _UnboundMethodMock(wraps=subaudit.Hook.extracting)
-
-    class MockedSubscribeUnsubscribeHook(subaudit.Hook):
-        """``Hook`` subclass with mocked methods, for a single test."""
-        subscribe = subscribe_method
-        unsubscribe = unsubscribe_method
-        listening = listening_method
-        extracting = extracting_method
-
-    return _DerivedHookFixture(
-        subscribe_method=subscribe_method,
-        unsubscribe_method=unsubscribe_method,
-        listening_method=listening_method,
-        extracting_method=extracting_method,
-        instance=MockedSubscribeUnsubscribeHook(),
-    )
+from tests.conftest import (
+    AnyHook,
+    DerivedHookFixture,
+    MaybeRaiser,
+    MultiSupplier,
+)
 
 
 def _make_event() -> str:
@@ -662,7 +609,7 @@ def test_listening_does_not_observe_before_enter(
 
 
 def test_listening_does_not_call_subscribe_before_enter(
-    derived_hook: _DerivedHookFixture, event: str, listener: _MockListener,
+    derived_hook: DerivedHookFixture, event: str, listener: _MockListener,
 ) -> None:
     derived_hook.instance.listening(event, listener)
     derived_hook.subscribe_method.assert_not_called()
@@ -678,7 +625,7 @@ def test_listening_observes_between_enter_and_exit(
 
 
 def test_listening_enter_calls_subscribe(
-    derived_hook: _DerivedHookFixture, event: str, listener: _MockListener,
+    derived_hook: DerivedHookFixture, event: str, listener: _MockListener,
 ) -> None:
     """An overridden ``subscribe`` method will be used by ``listening``."""
     with derived_hook.instance.listening(event, listener):
@@ -706,7 +653,7 @@ def test_listening_does_not_observe_after_exit(
 def test_listening_exit_calls_unsubscribe(
     subtests: SubTests,
     maybe_raise: MaybeRaiser,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -779,7 +726,7 @@ def test_extracting_does_not_extract_before_enter(
 
 
 def test_extracting_does_not_call_subscribe_before_enter(
-    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
+    derived_hook: DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
     derived_hook.instance.extracting(event, extractor)
     derived_hook.subscribe_method.assert_not_called()
@@ -802,7 +749,7 @@ def test_extracting_extracts_between_enter_and_exit(
 
 
 def test_extracting_enter_calls_subscribe_exactly_once(
-    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
+    derived_hook: DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
     with derived_hook.instance.extracting(event, extractor):
         derived_hook.subscribe_method.assert_called_once()
@@ -810,7 +757,7 @@ def test_extracting_enter_calls_subscribe_exactly_once(
 
 def test_extracting_enter_passes_subscribe_same_event_and_hook(
     subtests: SubTests,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -825,7 +772,7 @@ def test_extracting_enter_passes_subscribe_same_event_and_hook(
 
 
 def test_extracting_enter_passes_appender_to_subscribe(
-    derived_hook: _DerivedHookFixture, event: str, extractor: _MockExtractor,
+    derived_hook: DerivedHookFixture, event: str, extractor: _MockExtractor,
 ) -> None:
     with derived_hook.instance.extracting(event, extractor) as extracts:
         subscribe_call, = derived_hook.subscribe_method.mock_calls
@@ -867,7 +814,7 @@ def test_extracting_does_not_extract_after_exit(
 def test_extracting_exit_calls_unsubscribe_exactly_once(
     subtests: SubTests,
     maybe_raise: MaybeRaiser,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -884,7 +831,7 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
     maybe_raise: MaybeRaiser,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -903,7 +850,7 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
 
 def test_extracting_exit_passes_appender_to_unsubscribe(
     maybe_raise: MaybeRaiser,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -965,7 +912,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
 def test_extracting_subscribes_and_unsubscribes_same(
     maybe_raise: MaybeRaiser,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -980,7 +927,7 @@ def test_extracting_subscribes_and_unsubscribes_same(
 
 def test_extracting_delegates_to_listening(
     subtests: SubTests,
-    derived_hook: _DerivedHookFixture,
+    derived_hook: DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1075,7 +1022,7 @@ def test_repr_shows_one_event_with_multiple_listeners_as_one(
 
 
 def test_repr_uses_derived_class_type_name(
-    derived_hook: _DerivedHookFixture, assert_repr_summary: _ReprAsserter,
+    derived_hook: DerivedHookFixture, assert_repr_summary: _ReprAsserter,
 ) -> None:
     assert_repr_summary(
         derived_hook.instance,
