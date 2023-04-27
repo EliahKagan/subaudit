@@ -138,8 +138,8 @@ class _TopLevel:
         return subaudit.extracting(event, extractor)
 
 
-@pytest.fixture(params=[subaudit.Hook, _TopLevel])
-def any_hook(request: pytest.FixtureRequest) -> AnyHook:
+@pytest.fixture(name='any_hook', params=[subaudit.Hook, _TopLevel])
+def any_hook_fixture(request: pytest.FixtureRequest) -> AnyHook:
     """
     ``Hook`` instance or wrapper for the top-level functions.
 
@@ -174,8 +174,8 @@ def _make_hook() -> subaudit.Hook:
     return subaudit.Hook()
 
 
-@pytest.fixture
-def hook() -> subaudit.Hook:
+@pytest.fixture(name='hook')
+def hook_fixture() -> subaudit.Hook:
     """
     ``Hook`` instance.
 
@@ -184,8 +184,8 @@ def hook() -> subaudit.Hook:
     return _make_hook()
 
 
-@pytest.fixture
-def make_hooks() -> MultiSupplier[subaudit.Hook]:
+@pytest.fixture(name='make_hooks')
+def make_hooks_fixture() -> MultiSupplier[subaudit.Hook]:
     """
     Supplier of multiple ``Hook`` instances.
 
@@ -232,8 +232,8 @@ class DerivedHookFixture:
 #        look into removing the one dependence of a repr test on this fixture
 #        (which was sort of a questionable choice anyway) and moving this and
 #        supporting classes into the module of listening and extracting tests.
-@pytest.fixture
-def derived_hook() -> DerivedHookFixture:
+@pytest.fixture(name='derived_hook')
+def derived_hook_fixture() -> DerivedHookFixture:
     """
     Make a new ``Hook`` subclass with methods mocked.
 
@@ -275,8 +275,8 @@ def _make_event() -> str:
     return f'test-subaudit-{uuid.uuid4()}'
 
 
-@pytest.fixture
-def event() -> str:
+@pytest.fixture(name='event')
+def event_fixture() -> str:
     """
     Randomly generated fake event name.
 
@@ -286,8 +286,8 @@ def event() -> str:
     return _make_event()
 
 
-@pytest.fixture
-def make_events() -> MultiSupplier[str]:
+@pytest.fixture(name='make_events')
+def make_events_fixture() -> MultiSupplier[str]:
     """
     Supplier of multiple randomly generated fake event names.
 
