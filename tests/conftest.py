@@ -4,14 +4,8 @@ __all__ = [
     'MaybeRaiser',
     'maybe_raise',
     'AnyHook',
-    'any_hook',
     'MultiSupplier',
-    'hook',
-    'make_hooks',
     'DerivedHookFixture',
-    'derived_hook',
-    'event',
-    'make_events',
 ]
 
 import functools
