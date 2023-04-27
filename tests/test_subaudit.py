@@ -38,7 +38,6 @@ from typing import (
     cast,
 )
 import unittest
-import uuid
 
 import attrs
 import clock_timer
@@ -56,25 +55,6 @@ from tests.conftest import (
     MaybeRaiser,
     MultiSupplier,
 )
-
-
-def _make_event() -> str:
-    """Create a randomly generated fake event name."""
-    return f'test-subaudit-{uuid.uuid4()}'
-
-
-@pytest.fixture(name='event')
-def _event_fixture() -> str:
-    """Randomly generated fake event name (pytest fixture)."""
-    return _make_event()
-
-
-@pytest.fixture(name='make_events')
-def _make_events_fixture() -> MultiSupplier[str]:
-    """
-    Supplier of multiple randomly generated fake event names (pytest fixture).
-    """
-    return MultiSupplier(_make_event)
 
 
 class _MockLike(Protocol):

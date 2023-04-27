@@ -10,6 +10,8 @@ __all__ = [
     'make_hooks',
     'DerivedHookFixture',
     'derived_hook',
+    'event',
+    'make_events',
 ]
 
 import functools
@@ -24,6 +26,7 @@ from typing import (
     Type,
     TypeVar,
 )
+import uuid
 
 import attrs
 import mock
@@ -241,3 +244,22 @@ def derived_hook() -> DerivedHookFixture:
         extracting_method=extracting_method,
         instance=MockedSubscribeUnsubscribeHook(),
     )
+
+
+def _make_event() -> str:
+    """Create a randomly generated fake event name."""
+    return f'test-subaudit-{uuid.uuid4()}'
+
+
+@pytest.fixture
+def event() -> str:
+    """Randomly generated fake event name (pytest fixture)."""
+    return _make_event()
+
+
+@pytest.fixture
+def make_events() -> MultiSupplier[str]:
+    """
+    Supplier of multiple randomly generated fake event names (pytest fixture).
+    """
+    return MultiSupplier(_make_event)
