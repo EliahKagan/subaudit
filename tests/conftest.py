@@ -15,7 +15,6 @@
 
 __all__ = [
     'MaybeRaiser',
-    'maybe_raise',
     'AnyHook',
     'MultiSupplier',
     'DerivedHookFixture',
