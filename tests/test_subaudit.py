@@ -1119,14 +1119,13 @@ def test_extracting_delegates_to_listening(
     """
     Overriding ``listening`` customizes the behavior of ``extracting`` too.
     """
-    with contextlib.suppress(_FakeError):
-        with derived_hook.instance.extracting(event, extractor):
-            with subtests.test('listening called'):
-                derived_hook.listening_method.assert_called_once()
-            with subtests.test('listening call matches subscribe call'):
-                listening_calls = derived_hook.listening_method.mock_calls
-                subscribe_calls = derived_hook.subscribe_method.mock_calls
-                assert listening_calls == subscribe_calls
+    with derived_hook.instance.extracting(event, extractor):
+        with subtests.test('listening called'):
+            derived_hook.listening_method.assert_called_once()
+        with subtests.test('listening call matches subscribe call'):
+            listening_calls = derived_hook.listening_method.mock_calls
+            subscribe_calls = derived_hook.subscribe_method.mock_calls
+            assert listening_calls == subscribe_calls
 
 
 def test_repr_shows_hook_not_installed_on_creation(
