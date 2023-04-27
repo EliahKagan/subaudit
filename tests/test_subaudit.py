@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2023 Eliah Kagan
 #
 # Permission to use, copy, modify, and/or distribute this software for any
