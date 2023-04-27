@@ -102,7 +102,7 @@ class _AnyHook(Protocol):
     ) -> ContextManager[List[_R]]: ...
 
 
-class TopLevel:
+class _TopLevel:
     """
     Test double providing top-level functions from the ``subaudit`` module.
 
@@ -140,7 +140,7 @@ class TopLevel:
         return subaudit.extracting(event, extractor)
 
 
-@pytest.fixture(name='any_hook', params=[subaudit.Hook, TopLevel])
+@pytest.fixture(name='any_hook', params=[subaudit.Hook, _TopLevel])
 def _any_hook_fixture(request: pytest.FixtureRequest) -> _AnyHook:
     """
     ``Hook`` instance or wrapper for the top-level functions (pytest fixture).
