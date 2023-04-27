@@ -94,8 +94,6 @@ class _Extract:
     of more general behavior.
     """
 
-    # pylint: disable=too-few-public-methods  # This is an attrs data class.
-
     args: Tuple[Any, ...]
     """Event arguments extracted in a test."""
 
@@ -126,8 +124,6 @@ class _MockLockFixture:
     """
     Mock lock factory and ``Hook`` that uses it, for the ``mock_lock`` fixture.
     """
-
-    # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
     lock_factory: mock.Mock
     """The mock lock (mutex). This does not do any real locking."""
@@ -969,8 +965,6 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
 @attrs.frozen
 class _ChurnCounts:
     """Parameters for a churn test. (``test_usable_in_high_churn`` helper.)"""
-
-    # pylint: disable=too-few-public-methods  # This is an attrs data class.
 
     listeners: int
     """Total number of listeners."""

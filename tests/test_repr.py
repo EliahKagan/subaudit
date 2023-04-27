@@ -26,8 +26,6 @@ import tests.conftest as ct
 class _ReprAsserter:
     """Callable to assert correct ``Hook`` repr."""
 
-    # pylint: disable=too-few-public-methods  # Class for clearer type hinting.
-
     def __call__(
         self,
         hook: subaudit.Hook,
