@@ -21,6 +21,8 @@ from pytest_subtests import SubTests
 import subaudit
 import tests.conftest as ct
 
+# pylint: disable=missing-function-docstring  # Tests are descriptively named.
+
 
 def test_listening_does_not_observe_before_enter(
     any_hook: ct.AnyHook, event: str, listener: ct.MockListener,
