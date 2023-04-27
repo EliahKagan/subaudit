@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2023 Eliah Kagan
 #
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -55,7 +53,7 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
-from tests.conftest import MaybeRaiser, run
+from tests.conftest import MaybeRaiser
 
 _R = TypeVar('_R')
 """Function-level output type variable."""
@@ -1522,7 +1520,3 @@ def test_skip_if_unavailable_does_not_skip_since_3_8() -> None:
     wrapper = subaudit.skip_if_unavailable(wrapped)
     wrapper()
     wrapped.assert_called_once_with()
-
-
-if __name__ == '__main__':
-    run(__file__)
