@@ -43,8 +43,7 @@ import tests.conftest as ct
 
 @pytest.fixture(name='equal_listeners', params=[2, 3, 5])
 def _equal_listeners_fixture(
-    request: pytest.FixtureRequest,
-    null_listener: Callable[..., None],
+    request: pytest.FixtureRequest, null_listener: Callable[..., None],
 ) -> Tuple[ct.MockListener, ...]:
     """Listeners that are different objects but all equal (pytest fixture)."""
     group_key = object()
