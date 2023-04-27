@@ -126,7 +126,7 @@ class _MockLockFixture:
 
 
 @enum.unique
-class Scope(enum.Enum):
+class _Scope(enum.Enum):
     """
     Ways to supply a mock lock to a ``Hook``: pass locally or patch globally.
     """
@@ -138,16 +138,16 @@ class Scope(enum.Enum):
     """Patch globally."""
 
 
-@pytest.fixture(name='mock_lock', params=[Scope.LOCAL, Scope.GLOBAL])
+@pytest.fixture(name='mock_lock', params=[_Scope.LOCAL, _Scope.GLOBAL])
 def _mock_lock_fixture(
     request: pytest.FixtureRequest, mocker: MockerFixture,
 ) -> Generator[_MockLockFixture, None, None]:
     """A ``Hook`` created with its lock mocked (pytest fixture)."""
     lock_factory = mocker.MagicMock(threading.Lock)
 
-    if request.param is Scope.LOCAL:
+    if request.param is _Scope.LOCAL:
         hook = subaudit.Hook(sub_lock_factory=lock_factory)
-    elif request.param is Scope.GLOBAL:
+    elif request.param is _Scope.GLOBAL:
         mocker.patch('threading.Lock', lock_factory)
         hook = subaudit.Hook()
     else:
