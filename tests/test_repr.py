@@ -11,7 +11,7 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-"""Tests for the ``repr` of ``Hook`` objects."""
+"""Tests for the ``repr``s of ``Hook`` objects."""
 
 import re
 
