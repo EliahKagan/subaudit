@@ -77,7 +77,7 @@ class MaybeRaiser:
 
 
 @pytest.fixture(params=[False, True])
-def maybe_raise(request: pytest.FixtureRequest) -> Callable[[], None]:
+def maybe_raise(request: pytest.FixtureRequest) -> MaybeRaiser:
     """
     An object that, when called, either raises ``_FakeError`` or does nothing.
 
