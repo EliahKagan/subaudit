@@ -46,7 +46,6 @@ def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
         assert len({func.__self__ for func in top_level_functions}) == 1
 
 
-
 @attrs.frozen
 class _ChurnCounts:
     """Parameters for a churn test. (``test_usable_in_high_churn`` helper.)"""
