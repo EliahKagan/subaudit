@@ -59,6 +59,9 @@ ignore_missing_imports = true
 module = "pytest_subtests"
 ignore_missing_imports = true
 
+[tool.pylint.main]
+disable = ["too-few-public-methods"]
+
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow.",
