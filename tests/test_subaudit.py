@@ -17,30 +17,17 @@ Tests for the ``subaudit`` module.
 These are the tests not yet moved moved into some more specific test module.
 """
 
-# TODO: Finish splitting this into multiple modules.
+# FIXME: Finish moving some tests to other modules; rename this test_core.py.
 
 import contextlib
-import datetime
 import functools
 import io
 import pathlib
 import platform
-import random
 import sys
-from types import MethodType
-from typing import (
-    Any,
-    Callable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
-import unittest
+from typing import Any, Callable, List, Optional, Tuple
 
 import attrs
-import clock_timer
 import mock
 from mock import call
 import pytest
@@ -726,89 +713,6 @@ def test_extracting_delegates_to_listening(
             listening_calls = derived_hook.listening_method.mock_calls
             subscribe_calls = derived_hook.subscribe_method.mock_calls
             assert listening_calls == subscribe_calls
-
-
-@pytest.mark.unstable
-def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
-    """The module-level functions are bound methods of a ``Hook`` object."""
-    top_level_functions = cast(Sequence[MethodType], [
-        subaudit.subscribe,
-        subaudit.unsubscribe,
-        subaudit.listening,
-        subaudit.extracting,
-    ])
-
-    for func in top_level_functions:
-        with subtests.test('bound to a hook', name=func.__name__):
-            assert isinstance(func.__self__, subaudit.Hook)
-
-    with subtests.test('all bound to the same one'):
-        assert len({func.__self__ for func in top_level_functions}) == 1
-
-
-@attrs.frozen
-class _ChurnCounts:
-    """Parameters for a churn test. (``test_usable_in_high_churn`` helper.)"""
-
-    listeners: int
-    """Total number of listeners."""
-
-    delta: int
-    """Number of listeners unsubscribed and resubscribed per test iteration."""
-
-    iterations: int
-    """Number of test iterations."""
-
-
-@pytest.mark.slow
-def test_usable_in_high_churn(
-    subtests: SubTests,
-    hook: subaudit.Hook,
-    event: str,
-    make_listeners: ct.MultiSupplier[ct.MockListener],
-) -> None:
-    """
-    ~1000 listeners with frequent ``subscribe``/``unsubscribe`` isn't too slow.
-    """
-    counts = _ChurnCounts(listeners=1000, delta=100, iterations=100)
-    all_listeners = make_listeners(count=counts.listeners)
-    prng = random.Random(18140838203929040771)
-
-    all_expected_observations: List[List[int]] = []
-    all_observations: List[List[int]] = []
-    observations: List[int] = []
-
-    for number, listener in enumerate(all_listeners):
-        listener.side_effect = functools.partial(observations.append, number)
-        hook.subscribe(event, listener)
-
-    attached = list(range(counts.listeners))
-
-    with clock_timer.ClockLogger() as timer:
-        for _ in range(counts.iterations):
-            detached: List[int] = []
-
-            for _ in range(counts.delta):
-                number = attached.pop(prng.randrange(len(attached)))
-                hook.unsubscribe(event, all_listeners[number])
-                detached.append(number)
-
-            while detached:
-                number = detached.pop(prng.randrange(len(detached)))
-                hook.subscribe(event, all_listeners[number])
-                attached.append(number)
-
-            all_expected_observations.append(attached[:])
-            subaudit.audit(event)
-            all_observations.append(observations[:])
-            observations.clear()
-
-    with subtests.test('listener calls in correct order'):
-        assert all_observations == all_expected_observations
-
-    with subtests.test('elapsed time not excessive'):
-        elapsed = datetime.timedelta(seconds=timer.total_elapsed)
-        assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
 
 
 @_xfail_no_standard_audit_events_before_3_8
