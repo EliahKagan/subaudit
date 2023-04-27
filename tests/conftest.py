@@ -3,8 +3,10 @@
 __all__ = [
     'MaybeRaiser',
     'maybe_raise',
+    'run',
 ]
 
+import sys
 from typing import Callable, ClassVar, Type
 
 import attrs
@@ -43,3 +45,8 @@ def maybe_raise(request: pytest.FixtureRequest) -> Callable[[], None]:
     This fixture multiplies tests, covering raising and non-raising cases.
     """
     return MaybeRaiser(request.param)
+
+
+def run(path):
+    """Run the tests in a pytest test file, and exit."""
+    sys.exit(pytest.main([path, *sys.argv[1:]]))
