@@ -13,7 +13,7 @@
 
 """Tests for the ``subaudit`` module."""
 
-# TODO: Split this into multiple modules.
+# TODO: Finish splitting this into multiple modules.
 
 import contextlib
 import datetime
@@ -53,30 +53,13 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
+from tests.conftest import MaybeRaiser
 
 _R = TypeVar('_R')
 """Function-level output type variable."""
 
 _R_co = TypeVar('_R_co', covariant=True)
 """Class-level output type variable (covariant)."""
-
-
-class _FakeError(Exception):
-    """Fake exception for testing."""
-
-
-@pytest.fixture(name='maybe_raise', params=[False, True])
-def _maybe_raise_fixture(request: pytest.FixtureRequest) -> Callable[[], None]:
-    """
-    Function to either raises ``_FakeError`` or do nothing (pytest fixture).
-
-    This multiplies tests, covering raising and non-raising cases.
-    """
-    def maybe_raise_now() -> None:
-        if request.param:
-            raise _FakeError
-
-    return maybe_raise_now
 
 
 class _AnyHook(Protocol):
@@ -822,13 +805,13 @@ def test_listening_enter_calls_subscribe(
 
 
 def test_listening_does_not_observe_after_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     listener: _MockListener,
 ) -> None:
     """After exiting the ``with``-statement, the listener is not subscribed."""
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.listening(event, listener):
             maybe_raise()
     subaudit.audit(event, 'a', 'b', 'c')
@@ -837,13 +820,13 @@ def test_listening_does_not_observe_after_exit(
 
 def test_listening_exit_calls_unsubscribe(
     subtests: SubTests,
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     derived_hook: _DerivedHookFixture,
     event: str,
     listener: _MockListener,
 ) -> None:
     """An overridden ``unsubscribe`` method will be called by ``listening``."""
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with derived_hook.instance.listening(event, listener):
             with subtests.test(where='inside-with-block'):
                 derived_hook.unsubscribe_method.assert_not_called()
@@ -858,7 +841,7 @@ def test_listening_exit_calls_unsubscribe(
 
 
 def test_listening_observes_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     listener: _MockListener,
@@ -869,7 +852,7 @@ def test_listening_observes_only_between_enter_and_exit(
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.listening(event, listener):
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
@@ -968,12 +951,12 @@ def test_extracting_enter_passes_appender_to_subscribe(
 
 
 def test_extracting_does_not_observe_after_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.extracting(event, extractor):
             maybe_raise()
     subaudit.audit(event, 'a', 'b', 'c')
@@ -981,14 +964,14 @@ def test_extracting_does_not_observe_after_exit(
 
 
 def test_extracting_does_not_extract_after_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
     extracts: Optional[List[_Extract]] = None
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.extracting(event, extractor) as extracts:
             maybe_raise()
 
@@ -998,12 +981,12 @@ def test_extracting_does_not_extract_after_exit(
 
 def test_extracting_exit_calls_unsubscribe_exactly_once(
     subtests: SubTests,
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with derived_hook.instance.extracting(event, extractor):
             with subtests.test(where='inside-with-block'):
                 derived_hook.unsubscribe_method.assert_not_called()
@@ -1015,12 +998,12 @@ def test_extracting_exit_calls_unsubscribe_exactly_once(
 
 def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
     subtests: SubTests,
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with derived_hook.instance.extracting(event, extractor):
             maybe_raise()
 
@@ -1034,14 +1017,14 @@ def test_extracting_exit_passes_unsubscribe_same_event_and_hook(
 
 
 def test_extracting_exit_passes_appender_to_unsubscribe(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
     extracts: Optional[List[_Extract]] = None
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with derived_hook.instance.extracting(event, extractor) as extracts:
             maybe_raise()
 
@@ -1052,7 +1035,7 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 
 
 def test_extracting_observes_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
@@ -1060,7 +1043,7 @@ def test_extracting_observes_only_between_enter_and_exit(
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.extracting(event, extractor):
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
@@ -1073,7 +1056,7 @@ def test_extracting_observes_only_between_enter_and_exit(
 
 
 def test_extracting_extracts_only_between_enter_and_exit(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     any_hook: _AnyHook,
     event: str,
     extractor: _MockExtractor,
@@ -1083,7 +1066,7 @@ def test_extracting_extracts_only_between_enter_and_exit(
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with any_hook.extracting(event, extractor) as extracts:
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
@@ -1096,12 +1079,12 @@ def test_extracting_extracts_only_between_enter_and_exit(
 
 
 def test_extracting_subscribes_and_unsubscribes_same(
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     derived_hook: _DerivedHookFixture,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with derived_hook.instance.extracting(event, extractor):
             maybe_raise()
 
@@ -1291,7 +1274,7 @@ def test_unsubscribe_never_calls_release(
 ])
 def test_lock_accepts_common_cm(
     cm_factory: subaudit.LockContextManagerFactory,
-    maybe_raise: Callable[[], None],
+    maybe_raise: MaybeRaiser,
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -1308,7 +1291,7 @@ def test_lock_accepts_common_cm(
     subaudit.audit(event, 'a')
     subaudit.audit(event, 'b', 'c')
 
-    with contextlib.suppress(_FakeError):
+    with contextlib.suppress(MaybeRaiser.Exception):
         with hook.listening(event, listener):
             subaudit.audit(event, 'd')
             subaudit.audit(event, 'e', 'f')
