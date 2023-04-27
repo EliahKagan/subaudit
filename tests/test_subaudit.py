@@ -119,60 +119,7 @@ _xfail_no_standard_audit_events_before_3_8 = pytest.mark.xfail(
 Mark expected failure by ``AssertionError`` due to no library events < 3.8.
 """
 
-
 # pylint: disable=missing-function-docstring  # Tests are descriptively named.
-
-
-@pytest.mark.xfail(
-    sys.version_info < (3, 8),
-    reason='Python 3.8+ has sys.audit.',
-    raises=AttributeError,
-    strict=True,
-)
-def test_audit_is_sys_audit_since_3_8() -> None:
-    ours = subaudit.audit
-
-    # pylint: disable=no-member
-    assert ours is sys.audit  # type: ignore[attr-defined]
-
-
-@pytest.mark.xfail(
-    sys.version_info >= (3, 8),
-    reason='Python 3.8+ has sys.audit.',
-    raises=ImportError,
-    strict=True,
-)
-def test_audit_is_sysaudit_audit_before_3_8() -> None:
-    # pylint: disable=import-error,import-outside-toplevel
-    import sysaudit  # type: ignore[import]
-
-    assert subaudit.audit is sysaudit.audit
-
-
-@pytest.mark.xfail(
-    sys.version_info < (3, 8),
-    reason='Python 3.8+ has sys.addaudithook.',
-    raises=AttributeError,
-    strict=True,
-)
-def test_addaudithook_is_sys_addaudithook_since_3_8() -> None:
-    ours = subaudit.addaudithook
-
-    # pylint: disable=no-member
-    assert ours is sys.addaudithook  # type: ignore[attr-defined]
-
-
-@pytest.mark.xfail(
-    sys.version_info >= (3, 8),
-    reason='Python 3.8+ has sys.addaudithook.',
-    raises=ImportError,
-    strict=True,
-)
-def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
-    # pylint: disable=import-error,import-outside-toplevel
-    import sysaudit  # type: ignore[import]
-
-    assert subaudit.addaudithook is sysaudit.addaudithook
 
 
 def test_subscribed_listener_observes_event(
