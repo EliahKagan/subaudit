@@ -6,6 +6,8 @@ __all__ = [
     'AnyHook',
     'MultiSupplier',
     'DerivedHookFixture',
+    'MockLike',
+    'MockListener',
 ]
 
 import functools
@@ -16,6 +18,7 @@ from typing import (
     ContextManager,
     Generic,
     List,
+    Optional,
     Tuple,
     Type,
     TypeVar,
@@ -301,3 +304,58 @@ def null_listener_fixture() -> Callable[..., None]:
     can pass as a ``spec`` argument for ``Mock``, ``MagicMock``, patchers, etc.
     """
     return lambda *_: None
+
+
+class MockLike(Protocol):
+    """
+    Protocol for objects with ``assert_*`` methods and call spying we need.
+    """
+
+    # pylint: disable=missing-function-docstring  # This is a protocol.
+
+    __slots__ = ()
+
+    @property
+    def call_count(self) -> int: ...
+
+    # FIXME: Name the return type in a way that does not violate encapsulation.
+    @property
+    def mock_calls(self) -> mock.mock._CallList: ...
+
+    def assert_called_once(self) -> None: ...
+
+    def assert_called_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_called_once_with(self, *args: Any, **kwargs: Any) -> None: ...
+
+    def assert_not_called(self) -> None: ...
+
+
+class MockListener(MockLike, Protocol):
+    """Protocol for a listener that supports some of the ``Mock`` interface."""
+
+    # pylint: disable=missing-function-docstring  # This is a protocol.
+
+    __slots__ = ()
+
+    def __call__(self, *args: Any) -> None: ...
+
+    @property
+    def side_effect(self) -> Optional[Callable[..., Any]]: ...
+
+    @side_effect.setter
+    def side_effect(self, __value: Optional[Callable[..., Any]]) -> None: ...
+
+
+@pytest.fixture(name='listener')
+def listener_fixture(null_listener: Callable[..., None]) -> MockListener:
+    """Mock listener (pytest fixture)."""
+    return mock.Mock(spec=null_listener)
+
+
+@pytest.fixture(name='make_listeners')
+def make_listeners_fixture(
+    null_listener: Callable[..., None],
+) -> MultiSupplier[MockListener]:
+    """Supplier of multiple mock listeners (pytest fixture)."""
+    return MultiSupplier(lambda: mock.Mock(spec=null_listener))
