@@ -11,7 +11,11 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-"""Tests for the ``subaudit`` module."""
+"""
+Tests for the ``subaudit`` module.
+
+These are the tests not yet moved moved into some more specific test module.
+"""
 
 # TODO: Finish splitting this into multiple modules.
 
@@ -23,7 +27,6 @@ import io
 import pathlib
 import platform
 import random
-import re
 import sys
 import threading
 from types import MethodType
@@ -116,35 +119,6 @@ class _MockExtractor(MockLike, Protocol):
 def _extractor_fixture() -> _MockExtractor:
     """Mock extractor (pytest fixture). Returns a tuple of its arguments."""
     return mock.Mock(wraps=_Extract.from_separate_args)
-
-
-@attrs.frozen
-class _ReprAsserter:
-    """Callable to assert correct ``Hook`` repr."""
-
-    # pylint: disable=too-few-public-methods  # Class for clearer type hinting.
-
-    def __call__(
-        self,
-        hook: subaudit.Hook,
-        summary_pattern: str,
-        *,
-        type_name_pattern: str = 'Hook',
-    ) -> None:
-        """Assert the repr is the non-code style with a matching summary."""
-        regex = rf'<{type_name_pattern} at 0x[0-9a-fA-F]+: {summary_pattern}>'
-        assert re.fullmatch(regex, repr(hook))
-
-
-@pytest.fixture(name='assert_repr_summary')
-def _assert_repr_summary_fixture() -> _ReprAsserter:
-    """
-    Function to assert a ``Hook`` instance has a correct repr (pytest fixture).
-
-    The repr is asserted to be in the non-code style, containing general
-    information followed by a summary matching the specific pattern passed.
-    """
-    return _ReprAsserter()
 
 
 @attrs.frozen
@@ -862,94 +836,6 @@ def test_extracting_delegates_to_listening(
             listening_calls = derived_hook.listening_method.mock_calls
             subscribe_calls = derived_hook.subscribe_method.mock_calls
             assert listening_calls == subscribe_calls
-
-
-def test_repr_shows_hook_not_installed_on_creation(
-    hook: subaudit.Hook, assert_repr_summary: _ReprAsserter,
-) -> None:
-    """A new ``Hook``'s repr has general info and the not-installed summary."""
-    assert_repr_summary(hook, r'audit hook not installed')
-
-
-def test_repr_shows_one_event_while_listening(
-    hook: subaudit.Hook,
-    event: str,
-    listener: MockListener,
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    with hook.listening(event, listener):
-        assert_repr_summary(hook, r'watching 1 event')
-
-
-def test_repr_shows_no_events_after_done_listening(
-    hook: subaudit.Hook,
-    event: str,
-    listener: MockListener,
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    with hook.listening(event, listener):
-        pass
-    assert_repr_summary(hook, r'watching 0 events')
-
-
-def test_repr_shows_both_events_when_nested_listening(
-    hook: subaudit.Hook,
-    make_events: MultiSupplier[str],
-    listener: MockListener,
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    event1, event2 = make_events(2)
-    with hook.listening(event1, listener):
-        with hook.listening(event2, listener):
-            assert_repr_summary(hook, r'watching 2 events')
-
-
-def test_repr_shows_one_event_after_done_listening_to_second(
-    hook: subaudit.Hook,
-    make_events: MultiSupplier[str],
-    listener: MockListener,
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    event1, event2 = make_events(2)
-    with hook.listening(event1, listener):
-        with hook.listening(event2, listener):
-            pass
-        assert_repr_summary(hook, r'watching 1 event')
-
-
-def test_repr_shows_no_events_after_done_nested_listening(
-    hook: subaudit.Hook,
-    make_events: MultiSupplier[str],
-    listener: MockListener,
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    event1, event2 = make_events(2)
-    with hook.listening(event1, listener):
-        with hook.listening(event2, listener):
-            pass
-    assert_repr_summary(hook, r'watching 0 events')
-
-
-def test_repr_shows_one_event_with_multiple_listeners_as_one(
-    hook: subaudit.Hook,
-    event: str,
-    make_listeners: MultiSupplier[MockListener],
-    assert_repr_summary: _ReprAsserter,
-) -> None:
-    listener1, listener2 = make_listeners(2)
-    with hook.listening(event, listener1):
-        with hook.listening(event, listener2):
-            assert_repr_summary(hook, r'watching 1 event')
-
-
-def test_repr_uses_derived_class_type_name(
-    derived_hook: DerivedHookFixture, assert_repr_summary: _ReprAsserter,
-) -> None:
-    assert_repr_summary(
-        derived_hook.instance,
-        r'audit hook not installed',
-        type_name_pattern=r'MockedSubscribeUnsubscribeHook',
-    )
 
 
 def test_lock_constructed_immediately(mock_lock: _MockLockFixture) -> None:
