@@ -133,10 +133,13 @@ def test_repr_shows_one_event_with_multiple_listeners_as_one(
 
 
 def test_repr_uses_derived_class_type_name(
-    derived_hook: ct.DerivedHookFixture, assert_repr_summary: _ReprAsserter,
+        assert_repr_summary: _ReprAsserter,
 ) -> None:
+    class MyHook(subaudit.Hook):
+        """Derived class for repr testing."""
+
     assert_repr_summary(
-        derived_hook.instance,
+        MyHook(),
         r'audit hook not installed',
-        type_name_pattern=r'MockedSubscribeUnsubscribeHook',
+        type_name_pattern=r'MyHook',
     )
