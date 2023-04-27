@@ -30,7 +30,6 @@ from types import MethodType
 from typing import (
     Any,
     Callable,
-    ContextManager,
     Generator,
     Generic,
     List,
@@ -53,82 +52,10 @@ from pytest_subtests import SubTests
 from typing_extensions import Protocol, Self
 
 import subaudit
-from tests.conftest import MaybeRaiser
-
-_R = TypeVar('_R')
-"""Function-level output type variable."""
+from tests.conftest import AnyHook, MaybeRaiser
 
 _R_co = TypeVar('_R_co', covariant=True)
 """Class-level output type variable (covariant)."""
-
-
-class _AnyHook(Protocol):
-    """Protocol for the ``Hook`` interface."""
-
-    # pylint: disable=missing-function-docstring  # This is a protocol.
-
-    __slots__ = ()
-
-    def subscribe(self, event: str, listener: Callable[..., None]) -> None: ...
-
-    def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
-        ...
-
-    def listening(
-        self, event: str, listener: Callable[..., None],
-    ) -> ContextManager[None]: ...
-
-    def extracting(
-        self, event: str, extractor: Callable[..., _R],
-    ) -> ContextManager[List[_R]]: ...
-
-
-class _TopLevel:
-    """
-    Test double providing top-level functions from the ``subaudit`` module.
-
-    This is so the tests of the top-level functions don't depend on them being
-    instance methods (of ``Hook``), which may change. (They may delegate to
-    instance methods in the future. We would lose ``__self__``, but they could
-    have their own docstrings.) Otherwise, we would just access ``__self__`` on
-    one of them and use that ``Hook``.
-    """
-
-    __slots__ = ()
-
-    def __repr__(self) -> str:
-        """Python code representation."""
-        return f'{type(self).__name__}()'
-
-    def subscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Call the top-level ``subscribe``."""
-        return subaudit.subscribe(event, listener)
-
-    def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Call the top-level ``unsubscribe``."""
-        return subaudit.unsubscribe(event, listener)
-
-    def listening(
-        self, event: str, listener: Callable[..., None],
-    ) -> ContextManager[None]:
-        """Call the top-level ``listening``."""
-        return subaudit.listening(event, listener)
-
-    def extracting(
-        self, event: str, extractor: Callable[..., _R],
-    ) -> ContextManager[List[_R]]:
-        """Call the top-level ``extracting``."""
-        return subaudit.extracting(event, extractor)
-
-
-@pytest.fixture(name='any_hook', params=[subaudit.Hook, _TopLevel])
-def _any_hook_fixture(request: pytest.FixtureRequest) -> _AnyHook:
-    """
-    ``Hook`` instance or wrapper for the top-level functions (pytest fixture).
-
-    This multiplies tests, covering new instances and module-level functions.
-    """
-    return request.param()
 
 
 class _MultiSupplier(Generic[_R_co]):
@@ -508,7 +435,7 @@ def test_addaudithook_is_sysaudit_addaudithook_before_3_8() -> None:
 
 
 def test_subscribed_listener_observes_event(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     any_hook.subscribe(event, listener)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -516,7 +443,7 @@ def test_subscribed_listener_observes_event(
 
 
 def test_unsubscribed_listener_does_not_observe_event(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     any_hook.subscribe(event, listener)
     any_hook.unsubscribe(event, listener)
@@ -525,7 +452,7 @@ def test_unsubscribed_listener_does_not_observe_event(
 
 
 def test_subscribed_listener_does_not_observe_other_event(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     make_events: _MultiSupplier[str],
     listener: _MockListener,
 ) -> None:
@@ -537,7 +464,7 @@ def test_subscribed_listener_does_not_observe_other_event(
 
 
 def test_listener_can_subscribe_multiple_events(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     make_events: _MultiSupplier[str],
     listener: _MockListener,
 ) -> None:
@@ -550,7 +477,7 @@ def test_listener_can_subscribe_multiple_events(
 
 
 def test_listeners_called_in_subscribe_order(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -569,7 +496,7 @@ def test_listeners_called_in_subscribe_order(
 
 
 def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -592,7 +519,7 @@ def test_listeners_called_in_subscribe_order_after_others_unsubscribe(
 
 
 def test_listeners_called_in_new_order_after_resubscribe(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -611,14 +538,14 @@ def test_listeners_called_in_new_order_after_resubscribe(
 
 
 def test_cannot_unsubscribe_if_never_subscribed(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     with pytest.raises(ValueError):
         any_hook.unsubscribe(event, listener)
 
 
 def test_cannot_unsubscribe_if_no_longer_subscribed(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     any_hook.subscribe(event, listener)
     any_hook.unsubscribe(event, listener)
@@ -628,7 +555,7 @@ def test_cannot_unsubscribe_if_no_longer_subscribed(
 
 @pytest.mark.parametrize('count', [0, 2, 3, 10])
 def test_listener_observes_event_as_many_times_as_subscribed(
-    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
+    count: int, any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         any_hook.subscribe(event, listener)
@@ -638,7 +565,7 @@ def test_listener_observes_event_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_can_unsubscribe_as_many_times_as_subscribed(
-    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
+    count: int, any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         any_hook.subscribe(event, listener)
@@ -652,7 +579,7 @@ def test_can_unsubscribe_as_many_times_as_subscribed(
 
 @pytest.mark.parametrize('count', [2, 3, 10])
 def test_cannot_unsubscribe_more_times_than_subscribed(
-    count: int, any_hook: _AnyHook, event: str, listener: _MockListener,
+    count: int, any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     for _ in range(count):
         any_hook.subscribe(event, listener)
@@ -662,7 +589,7 @@ def test_cannot_unsubscribe_more_times_than_subscribed(
 
 
 def test_unsubscribe_keeps_other_listener(
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
@@ -676,7 +603,7 @@ def test_unsubscribe_keeps_other_listener(
 
 
 def test_unsubscribe_removes_last_equal_listener(
-    any_hook: _AnyHook, event: str, equal_listeners: Tuple[_MockListener, ...],
+    any_hook: AnyHook, event: str, equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
     for listener in equal_listeners:
         any_hook.subscribe(event, listener)
@@ -687,7 +614,7 @@ def test_unsubscribe_removes_last_equal_listener(
 
 def test_unsubscribe_keeps_non_last_equal_listeners(
     subtests: SubTests,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     equal_listeners: Tuple[_MockListener, ...],
 ) -> None:
@@ -766,7 +693,7 @@ def test_second_instance_adds_audit_hook_on_first_subscribe(
 
 
 def test_listening_does_not_observe_before_enter(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """The call to ``listening`` does not itself subscribe."""
     context_manager = any_hook.listening(event, listener)
@@ -784,7 +711,7 @@ def test_listening_does_not_call_subscribe_before_enter(
 
 
 def test_listening_observes_between_enter_and_exit(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """In the block of a ``with``-statement, the listener is subscribed."""
     with any_hook.listening(event, listener):
@@ -806,7 +733,7 @@ def test_listening_enter_calls_subscribe(
 
 def test_listening_does_not_observe_after_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -842,7 +769,7 @@ def test_listening_exit_calls_unsubscribe(
 
 def test_listening_observes_only_between_enter_and_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     listener: _MockListener,
 ) -> None:
@@ -865,7 +792,7 @@ def test_listening_observes_only_between_enter_and_exit(
 
 
 def test_listening_enter_returns_none(
-    any_hook: _AnyHook, event: str, listener: _MockListener,
+    any_hook: AnyHook, event: str, listener: _MockListener,
 ) -> None:
     """The ``listening`` context manager isn't meant to be used with ``as``."""
     with any_hook.listening(event, listener) as context:
@@ -874,7 +801,7 @@ def test_listening_enter_returns_none(
 
 
 def test_extracting_does_not_observe_before_enter(
-    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
+    any_hook: AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
     context_manager = any_hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -884,7 +811,7 @@ def test_extracting_does_not_observe_before_enter(
 
 
 def test_extracting_does_not_extract_before_enter(
-    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
+    any_hook: AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
     context_manager = any_hook.extracting(event, extractor)
     subaudit.audit(event, 'a', 'b', 'c')
@@ -901,7 +828,7 @@ def test_extracting_does_not_call_subscribe_before_enter(
 
 
 def test_extracting_observes_between_enter_and_exit(
-    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
+    any_hook: AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
     with any_hook.extracting(event, extractor):
         subaudit.audit(event, 'a', 'b', 'c')
@@ -909,7 +836,7 @@ def test_extracting_observes_between_enter_and_exit(
 
 
 def test_extracting_extracts_between_enter_and_exit(
-    any_hook: _AnyHook, event: str, extractor: _MockExtractor,
+    any_hook: AnyHook, event: str, extractor: _MockExtractor,
 ) -> None:
     with any_hook.extracting(event, extractor) as extracts:
         subaudit.audit(event, 'a', 'b', 'c')
@@ -952,7 +879,7 @@ def test_extracting_enter_passes_appender_to_subscribe(
 
 def test_extracting_does_not_observe_after_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -965,7 +892,7 @@ def test_extracting_does_not_observe_after_exit(
 
 def test_extracting_does_not_extract_after_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1036,7 +963,7 @@ def test_extracting_exit_passes_appender_to_unsubscribe(
 
 def test_extracting_observes_only_between_enter_and_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1057,7 +984,7 @@ def test_extracting_observes_only_between_enter_and_exit(
 
 def test_extracting_extracts_only_between_enter_and_exit(
     maybe_raise: MaybeRaiser,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     event: str,
     extractor: _MockExtractor,
 ) -> None:
@@ -1396,7 +1323,7 @@ def test_usable_in_high_churn(
 
 @_xfail_no_standard_audit_events_before_3_8
 def test_can_listen_to_id_event(
-    any_hook: _AnyHook, listener: _MockListener,
+    any_hook: AnyHook, listener: _MockListener,
 ) -> None:
     """
     We can listen to the ``builtins.id`` event.
@@ -1413,7 +1340,7 @@ def test_can_listen_to_id_event(
 
 @_xfail_no_standard_audit_events_before_3_8
 def test_can_listen_to_open_event(
-    tmp_path: pathlib.Path, any_hook: _AnyHook, listener: _MockListener,
+    tmp_path: pathlib.Path, any_hook: AnyHook, listener: _MockListener,
 ) -> None:
     """
     We can listen to the ``open`` event.
@@ -1442,7 +1369,7 @@ def test_can_listen_to_open_event(
 def test_can_listen_to_input_events(
     capsys: pytest.CaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
-    any_hook: _AnyHook,
+    any_hook: AnyHook,
     make_listeners: _MultiSupplier[_MockListener],
 ) -> None:
     """
