@@ -18,7 +18,7 @@ import unittest
 
 import mock
 import pytest
-from pytest_subtests import SubTests
+from pytest_check.context_manager import CheckContextManager
 
 import subaudit
 
@@ -41,22 +41,24 @@ def test_skip_if_unavailable_skips_before_3_8() -> None:
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
     reason='Python < 3.8 lacks PEP 578, so @skip_if_unavailable SHOULD skip.',
-    raises=(pytest.fail.Exception, AssertionError),
+    raises=AssertionError,
     strict=True,
 )
 def test_skip_if_unavailable_does_not_skip_since_3_8(
-    subtests: SubTests,
+    check: CheckContextManager,  # Works better than subtests, due to xfail.
 ) -> None:
     wrapped = mock.Mock(wraps=lambda: None)
     wrapper = subaudit.skip_if_unavailable(wrapped)
 
-    with subtests.test('SkipTest should not be raised'):
+    with check('SkipTest should not be raised'):
         try:
             wrapper()
         except unittest.SkipTest as skip_exception:
             # Intercept SkipTest, or THIS pytest test will show as skipped!
+            # (Use AssertionError instead of calling pytest.fail, to play well
+            # with pytest-check. This also simplifies the xfail decoration.)
             message = f'SkipTest exception wrongly raised: {skip_exception!r}'
-            pytest.fail(message)
+            raise AssertionError(message) from skip_exception
 
-    with subtests.test('The "wrapped" function should be called'):
+    with check('The "wrapped" function should be called'):
         wrapped.assert_called_once_with()
