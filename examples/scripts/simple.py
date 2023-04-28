@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# SPDX-License-Identifier: 0BSD
+
 """
 The builtins.input/result event.
 
