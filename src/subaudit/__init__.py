@@ -164,15 +164,19 @@ class Hook:
             except KeyError:
                 self._fail_unsubscribe(event, listener)
 
-            # Search in reverse, to remove the most recent matching listener.
-            listeners_reversed = list(reversed(listeners))
+            # Search in reverse, to find the most recent matching listener.
             try:
-                listeners_reversed.remove(listener)
+                reverse_last_index = listeners[::-1].index(listener)
             except ValueError:
                 self._fail_unsubscribe(event, listener)
 
-            if listeners_reversed:
-                self._table[event] = tuple(reversed(listeners_reversed))
+            # Remove it. (Use positive indexing to avoid slicing from "-0".)
+            last_index = len(listeners) - 1 - reverse_last_index
+            listeners = listeners[:last_index] + listeners[(last_index + 1):]
+
+            # Replace the row, unless empty, in which case remove it.
+            if listeners:
+                self._table[event] = listeners
             else:
                 del self._table[event]
 
