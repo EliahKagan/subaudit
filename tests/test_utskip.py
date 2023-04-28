@@ -26,7 +26,7 @@ import subaudit
 
 @pytest.mark.xfail(
     sys.version_info >= (3, 8),
-    reason='Python 3.8 has PEP 578, so @skip_if_unavailable should not skip.',
+    reason='Python 3.8 has PEP 578, so @skip_if_unavailable should NOT skip.',
     raises=pytest.fail.Exception,
     strict=True,
 )
@@ -39,12 +39,16 @@ def test_skip_if_unavailable_skips_before_3_8() -> None:
 
 @pytest.mark.xfail(
     sys.version_info < (3, 8),
-    reason='Python < 3.8 lacks PEP 578, so @skip_if_unavailable should skip.',
-    raises=AssertionError,
+    reason='Python < 3.8 lacks PEP 578, so @skip_if_unavailable SHOULD skip.',
+    raises=pytest.fail.Exception,
     strict=True,
 )
 def test_skip_if_unavailable_does_not_skip_since_3_8() -> None:
     wrapped = mock.Mock(wraps=lambda: None)
     wrapper = subaudit.skip_if_unavailable(wrapped)
-    wrapper()
+    try:
+        wrapper()
+    except unittest.SkipTest as skip_exception:
+        # We MUST intercept SkipText, or THIS pytest test gets marked skipped!
+        pytest.fail(f'SkipTest exception wrongly raised: {skip_exception!r}')
     wrapped.assert_called_once_with()
