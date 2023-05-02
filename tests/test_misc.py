@@ -28,7 +28,7 @@ import subaudit
 import tests.conftest as ct
 
 
-@pytest.mark.unstable
+@pytest.mark.implementation_detail
 def test_top_level_functions_are_bound_methods(subtests: SubTests) -> None:
     """The module-level functions are bound methods of a ``Hook`` object."""
     top_level_functions = cast(Sequence[MethodType], [

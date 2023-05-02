@@ -118,3 +118,44 @@ finally:
 ```
 
 ### `Hook` objects
+
+Each instance of the `Hook` class represents a single audit hook that supports
+subscribing and unsubscribing listeners to any number of events, with methods
+corresponding to the four top-level functions listed above. Separate `Hook`
+instances use separate audit hooks. The `Hook` class exists for three purposes:
+
+- It supplies the behavior of top-level `listening`, `extracting`, `subscribe`,
+  and `unsubscribe` functions, which correspond to the same-named methods on a
+  single global `Hook` object.
+- It allows multiple audit hooks to be used, for special cases where that might
+  be desired.
+- It facilitates customization, as detailed below.
+
+The actual audit hook that a `Hook` encapsulates is not installed until the
+first listener is subscribed. This happens on the first call to a `Hook`
+instance's `subscribe` or `unsubscribe` method, or the first time a context
+manager object obtained by calling its `listening` or `extracting` method. This
+is also true of the global hook that the top-level methods—merely importing
+`subaudit` does not install an audit.
+
+Whether the top-level functions are bound methods of a `Hook` instance, or
+delegate in some other way to those methods on an instance, is currently
+considered an implementation detail.
+
+#### Deriving from `Hook`
+
+You can derive from `Hook` to provide custom behavior for subscribing and
+unsubscribing, by overriding the `subscribe` and `unsubscribe` methods. You can
+also override the `listening` and `extracting` methods, though that is less
+likely to be useful. Overridden `subscribe` and `unsubscribe` methods are automatically used by `listening` and `extracting`.
+
+Whether `extracting` uses `listening`, or directly calls `subscribe` and
+`unsubscribe`, is currently considered an implementation detail.
+
+#### Custom lock factories for subscribing and unsubscribing
+
+Audit hooks used by `Hook` objects do not perform locking. The
+
+## Compatibility
+
+Audit hook were

@@ -73,6 +73,6 @@ disable = ["too-few-public-methods"]
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow.",
-    "unstable: mark a test as making a claim known to be likely to change.",
+    "implementation_detail: mark a test as making a claim known to be likely to change.",
 ]
 mock_use_standalone_module = true

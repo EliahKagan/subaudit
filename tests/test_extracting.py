@@ -285,6 +285,7 @@ def test_extracting_subscribes_and_unsubscribes_same(
     assert subscribe_calls == unsubscribe_calls
 
 
+@pytest.mark.implementation_detail
 def test_extracting_delegates_to_listening(
     subtests: SubTests,
     derived_hook: ct.DerivedHookFixture,
