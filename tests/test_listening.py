@@ -123,10 +123,10 @@ def test_listening_observes_only_between_enter_and_exit(
     assert listener.mock_calls == [call('d'), call('e', 'f')]
 
 
-def test_listening_enter_returns_none(
+def test_listening_enter_returns_listener(
     any_hook: ct.AnyHook, event: str, listener: ct.MockListener,
 ) -> None:
-    """The ``listening`` context manager isn't meant to be used with ``as``."""
+    """Entering ``listening`` hands back ``listener`` for convenience."""
     with any_hook.listening(event, listener) as context:
         pass
-    assert context is None
+    assert context is listener

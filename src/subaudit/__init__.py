@@ -48,6 +48,9 @@ if sys.version_info < (3, 8):
 else:
     from sys import addaudithook, audit
 
+_F = TypeVar('_F', bound=Callable[..., None])
+"""Type variable used to represent the callable type of an event listener."""
+
 _R = TypeVar('_R')
 """Type variable used to represent the return type of an extractor."""
 
@@ -180,9 +183,7 @@ class Hook:
             else:
                 del self._table[event]
 
-    def listening(
-        self, event: str, listener: Callable[..., None],
-    ) -> ContextManager[None]:
+    def listening(self, event: str, listener: _F) -> ContextManager[_F]:
         """Context manager to subscribe and unsubscribe an event listener."""
         return self._make_listening(event, listener)
 
@@ -229,8 +230,8 @@ class Hook:
 
     @contextlib.contextmanager
     def _make_listening(
-        self, event: str, listener: Callable[..., None],
-    ) -> Generator[None, None, None]:
+        self, event: str, listener: _F,
+    ) -> Generator[_F, None, None]:
         """
         Helper for ``listening``.
 
@@ -241,7 +242,7 @@ class Hook:
         """
         self.subscribe(event, listener)
         try:
-            yield
+            yield listener
         finally:
             self.unsubscribe(event, listener)
 

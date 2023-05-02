@@ -55,6 +55,9 @@ from typing_extensions import Protocol
 import subaudit
 from tests._helpers import ShortStrEnum
 
+_F = TypeVar('_F', bound=Callable[..., None])
+"""Listener type variable for test-double signatures."""
+
 _R = TypeVar('_R')
 """Function-level output type variable."""
 
@@ -149,9 +152,7 @@ class _TopLevel:
         """Call the top-level ``unsubscribe``."""
         return subaudit.unsubscribe(event, listener)
 
-    def listening(
-        self, event: str, listener: Callable[..., None],
-    ) -> ContextManager[None]:
+    def listening(self, event: str, listener: _F) -> ContextManager[_F]:
         """Call the top-level ``listening``."""
         return subaudit.listening(event, listener)
 

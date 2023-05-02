@@ -12,9 +12,7 @@ import subaudit
 
 def main() -> None:
     """Run the ``Mock``-using experiment."""
-    listener = Mock()
-
-    with subaudit.listening('pathlib.Path.glob', listener):
+    with subaudit.listening('pathlib.Path.glob', Mock()) as listener:
         for child in Path(__file__).absolute().parent.glob('*.py'):
             print(child)
 
