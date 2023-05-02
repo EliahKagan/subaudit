@@ -5,6 +5,8 @@
         "bikeshed",
         "builtins",
         "capsys",
+        "dataclass",
+        "dataclasses",
         "docstrings",
         "dunder",
         "Eliah",
@@ -15,6 +17,7 @@
         "prng",
         "readline",
         "subaudit",
+        "subinterpreter",
         "sysaudit"
     ],
     "python.testing.pytestArgs": [
