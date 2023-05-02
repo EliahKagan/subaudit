@@ -117,6 +117,8 @@ finally:
     subaudit.unsubscribe('open', listen_open)
 ```
 
+## Advanced usage
+
 ### `Hook` objects
 
 Each instance of the `Hook` class represents a single audit hook that supports
@@ -142,7 +144,7 @@ Whether the top-level functions are bound methods of a `Hook` instance, or
 delegate in some other way to those methods on an instance, is currently
 considered an implementation detail.
 
-#### Deriving from `Hook`
+### Deriving from `Hook`
 
 You can derive from `Hook` to provide custom behavior for subscribing and
 unsubscribing, by overriding the `subscribe` and `unsubscribe` methods. You can
@@ -152,7 +154,7 @@ likely to be useful. Overridden `subscribe` and `unsubscribe` methods are automa
 Whether `extracting` uses `listening`, or directly calls `subscribe` and
 `unsubscribe`, is currently considered an implementation detail.
 
-#### Custom lock factories for subscribing and unsubscribing
+### Custom lock factories for subscribing and unsubscribing
 
 Audit hooks used by `Hook` objects do not perform locking. The
 
