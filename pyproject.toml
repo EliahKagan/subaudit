@@ -60,6 +60,10 @@ module = "clock_timer"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "pytest_check.context_manager"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "pytest_subtests"
 ignore_missing_imports = true
 
