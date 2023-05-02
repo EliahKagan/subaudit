@@ -59,19 +59,12 @@ LockContextManager = Union[ContextManager[None], ContextManager[bool]]
 Type alias covering ``None``-returning and ``bool``-returning context managers.
 
 ``Lock``, ``RLock``, and other synchronization primitives' ``__enter__``
-methods always return ``True`` or ``False``, because it is possible to attempt
-to enter them in such a way that they are not entered but where this is not
-considered an error. This is rarely done when they are used as context
-managers, but for type hints to be correct, we must allow this.
+methods return ``bool`` (because ``acquire`` does). Most context managers that
+may be used in their place, including ``contextlib.nullcontext``, return
+``None``.
 
-Other context managers that may make sense to use for, or instead of,
-synchronization — including the trivial ``contextlib.nullcontext`` — are
-conceptually void, always returning ``None``.
-
-Note that this is subtly different from ``__enter__`` having ``Optional[bool]``
-as its return type, which would mean that the same instance could return
-``None`` on some ``__enter__`` calls but a ``bool`` value on others. This alias
-makes that a type error.
+This alias differs subtly from ``Optional[bool]``. With ``Optional[bool]``, the
+same object could return a ``bool`` on some calls and ``None`` on others.
 """
 
 LockContextManagerFactory = Callable[[], LockContextManager]
