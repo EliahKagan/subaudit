@@ -1,10 +1,12 @@
 {
     "cSpell.words": [
+        "__setattr__",
         "addaudithook",
         "appender",
         "bikeshed",
         "builtins",
         "capsys",
+        "contextlib",
         "dataclass",
         "dataclasses",
         "docstrings",
@@ -12,6 +14,7 @@
         "Eliah",
         "ipynb",
         "Kagan",
+        "nullcontext",
         "pathlib",
         "PosixPath",
         "prng",
