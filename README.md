@@ -21,10 +21,10 @@ down.
 
 This library provides a higher-level interface that allows listeners to be
 subscribed to specific audit events, and unsubscribed from them. It also
-provides context managers for using that interface with a convenient notation
-that ensures the listener is unsubscribed. The context managers are
-reentrant—you can nest `with`-statements that listen to events. By default, a
-single audit hook is used for any number of events and listeners.
+provides [context managers](#basic-usage) for using that interface with a
+convenient notation that ensures the listener is unsubscribed. The context
+managers are reentrant—you can nest `with`-statements that listen to events. By
+default, a single audit hook is used for any number of events and listeners.
 
 The primary use case for this library is in writing test code.
 
@@ -49,13 +49,13 @@ events, but the Python interpreter and standard library still do not provide
 any events, so only custom events can be used on Python 3.7.
 
 To avoid the performance cost of explicit locking in the audit hook, [some
-operations are assumed atomic](#Locking). I believe these assumptions are
+operations are assumed atomic](#locking). I believe these assumptions are
 correct for CPython, as well as PyPy and some other implementations, but there
 may exist Python implementations on which these assumptions don't hold.
 
 ## Basic usage
 
-### The `listening` context manager
+### The `subaudit.listening` context manager
 
 The best way to use subaudit is usually the `subaudit.listening` context
 manager.
@@ -92,7 +92,7 @@ listener.assert_any_call('/path/to/file.txt', 'r', ANY)
 Note how, when the `listening` context manager is entered, it returns the
 `listener` that was passed in, for convenience.
 
-### The `extracting` context manager
+### The `subaudit.extracting` context manager
 
 You may want to extract some information about calls to a list:
 
@@ -118,7 +118,7 @@ initially empty list, which will be populated with *extracts* gleaned from the
 event args. Each time the event is raised, the extractor is called and the
 object it returns is appended to the list.
 
-### `subscribe` and `unsubscribe`
+### `subaudit.subscribe` and `subaudit.unsubscribe`
 
 Although you should usually use the `listening` or `extracting` context
 managers instead, you can subscribe and unsubscribe listeners without a context
@@ -198,7 +198,7 @@ which were introduced in Python 3.10.)
 
 ## Specialized usage
 
-### `Hook` objects
+### `subaudit.Hook` objects
 
 Each instance of the `subaudit.Hook` class represents a single audit hook that
 supports subscribing and unsubscribing listeners for any number of events, with
@@ -278,12 +278,43 @@ You should not usually change this. But if you want to, you can construct a
 
 ### `subaudit.addaudithook` and `subaudit.audit`
 
+The `addaudithook` and `audit` functions
+
+### `@subaudit.skip_if_unavailable`
+
 <!-- FIXME: Write this subsection. -->
 
-### `@skip_if_unavailable`
+## Overview by level of abstraction
 
-<!-- FIXME: Write this subsection. -->
+From higher to lower level, from the perspective of the top-level `listening`
+and `extracting` functions:
+
+- `subaudit.extracting` - context manager that listens and extracts to a list
+- `subaudit.listening` - context manager to subscribe and unsubscribe a custom
+  listener *(usually use this)*
+- `subaudit.subscribe` and `subaudit.unsubscribe` - manually
+  subscribe/unsubscribe a listener
+- `subaudit.Hook` - abstraction around an audit hook allowing subscribing and
+  unsubscribing to specific events, with `extracting`, `listening`,
+  `subscribe`, and `unsubscribe` instance methods
+- `subaudit.addaudithook` - trivial abstraction representing whether the `sys`
+  or `sysaudit` function is used
+- `sys.addaudithook` or `sysaudit.addaudithook` - *not part of subaudit* -
+  install a [PEP 578](https://peps.python.org/pep-0578/) audit hook
+
+This list is not exhaustive. For example, `@skip_if_unavailable` is not part of
+that conceptual hierarchy.
 
 ## Acknowledgements
 
-<!-- Write this section. -->
+<!-- FIXME: Write this section. -->
+
+## About the name
+
+This library is called subaudit because it provides a way to effectively
+*sub*scribe to and un*sub*scribe from a *sub*set of audit events rather than
+all of them.
+
+<!--
+  FIXME: Say something about the *incidental* connection to subinterpreters.
+-->
