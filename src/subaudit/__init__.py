@@ -144,6 +144,13 @@ class Hook:
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
         """Attach a detachable listener to an event."""
+        # Our key must be a direct instance of str, because _lock's atomicity
+        # assumptions rely on all keys being of the built-in str type.
+        if type(event) is not str:
+            if not isinstance(event, str):
+                raise TypeError(f"event must be 'str', not {type(event)!r}")
+            event = f'{event!s}'  # Exactly str, even when str(event) isn't.
+
         with self._lock:
             if not self._hook_installed:
                 addaudithook(self._hook)
