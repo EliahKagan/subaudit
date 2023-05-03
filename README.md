@@ -264,7 +264,7 @@ unsubscribed.
 
 This is less likely to occur and much easier to avoid. But it is also harder to
 make safe without a lock. Subscribing and unsubscribing are unlikely to happen
-occur at a *sustained* high rate, so locking is unlikely to be a performance
+at a *sustained* high rate, so locking is unlikely to be a performance
 bottleneck. So, *by default*, subscribing and unsubscribing are synchronized
 with a `threading.Lock`, to ensure that shared state is not corrupted.
 
