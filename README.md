@@ -16,22 +16,24 @@
 # subaudit: Subscribe and unsubscribe for specific audit events
 
 [Audit hooks](https://docs.python.org/3/library/audit_events.html) in Python
-are called on all events, and they remain in place until the interpreter (or
-subinterpreter) shuts down.
+are called on all events, and they remain in place until the interpreter shuts
+down.
 
 This library provides a higher-level interface that allows listeners to be
 subscribed to specific audit events, and unsubscribed from them. It also
 provides context managers for using that interface with a convenient notation
-that ensures the listener is subscribed. The context managers are reentrant—you
-can nest `with`-statements that listen to events. By default, a single audit
-hook is used for any number of events and listeners.
+that ensures the listener is unsubscribed. The context managers are
+reentrant—you can nest `with`-statements that listen to events. By default, a
+single audit hook is used for any number of events and listeners.
 
 The primary use case for this library is in writing test code.
 
 ## License
 
 subaudit is licensed under [0BSD](https://spdx.org/licenses/0BSD.html), which
-is a "public-domain equivalent" license. See
+is a ["public-domain
+equivalent"](https://en.wikipedia.org/wiki/Public-domain-equivalent_license)
+license. See
 [**`LICENSE`**](https://github.com/EliahKagan/subaudit/blob/main/LICENSE).
 
 ## Compatibility
@@ -51,7 +53,7 @@ operations are assumed atomic](#Locking). I believe these assumptions are
 correct for CPython, as well as PyPy and some other implementations, but there
 may exist Python implementations on which these assumptions don't hold.
 
-## Usage
+## Basic usage
 
 ### The `listening` context manager
 
@@ -135,7 +137,66 @@ finally:
     subaudit.unsubscribe('open', listen_open)
 ```
 
-## Advanced usage
+Attempting to unsubscribe a listener that is not subscribed raises
+`ValueError`. Currently, subaudit provides no feature to make this succeed
+silently instead. But you can suppress the exception:
+
+```python
+with contextlib.suppress(ValueError):
+    subaudit.unsubscribe('glob.glob', possibly_subscribed_listener)
+```
+
+## Nesting
+
+To unsubscribe a listener from an event, it must be subscribed to the event.
+Subject to this restriction, calls to `subscribe` and `unsubscribe` can happen
+in any order and use of `listening` and `extracting` may be arbitrarily nested.
+
+`listening` and `extracting` support reentrant use with both the same event and
+different events. Here's an example with three `listening` contexts:
+
+```python
+from unittest.mock import Mock, call
+
+listen_to = Mock()  # Let us assert calls to child mocks in a specific order.
+
+with subaudit.listening('open', print):  # Print all open events' arguments.
+    with subaudit.listening('open', listen_to.open):  # Log opening.
+        with subaudit.listening('glob.glob', listen_to.glob):  # Log globbing.
+            ...  # Do something that may raise the events.
+
+assert parent.mock_calls == ...  # Assert a specific order of calls.
+```
+
+(That is written out to make the nesting clear. You can, as always, use a
+single `with`-statement with commas instead.)
+
+Here's an example with both `listening` and `extracting` contexts.
+
+```python
+from unittest.mock import Mock, call
+
+def extract(*args):
+    return args
+
+with (
+    subaudit.extracting('pathlib.Path.glob', extract) as glob_extracts,
+    subaudit.listening('pathlib.Path.glob', Mock()) as glob_listener,
+    subaudit.extracting('pathlib.Path.rglob', extract) as rglob_extracts,
+    subaudit.listening('pathlib.Path.rglob', Mock()) as rglob_listener,
+):
+    ...  # Do something that may raise the events.
+
+# Assert something about, or otherwise use, the mocks glob_listener and
+# rglob_listener, as well as the lists glob_extracts and rglob_extracts.
+...
+```
+
+(That example uses [parenthesized context
+managers](https://docs.python.org/3/whatsnew/3.10.html#parenthesized-context-managers),
+which were introduced in Python 3.10.)
+
+## Specialized usage
 
 ### `Hook` objects
 
@@ -178,9 +239,9 @@ Whether `extracting` uses `listening`, or directly calls `subscribe` and
 
 An audit hook installed by a `Hook` object—including the global `Hook` instance
 used by the top-level functions—does not perform explicit locking. This is to
-avoid the performance hit of locking frequently, since it is for all audit
-events, including those that have no listeners at the time. Instead, it relies
-on the implementation providing these operations atomically:
+avoid the performance hit of locking frequently, since an audit hook is called
+for all audit events, including those the hook does not act on. Instead, it
+relies on the implementation providing these operations atomically:
 
 - Writing an attribute reference, when it is a simple write to an instance
   dictionary or a slot. Writing an attribute need not be atomic when, for
@@ -202,4 +263,14 @@ particular, to disable locking, pass `contextlib.nullcontext`.
 
 ## Functions related to compatibility
 
-Audit hook were
+### `subaudit.addaudithook` and `subaudit.audit`
+
+<!-- FIXME: Write this subsection. -->
+
+### `@skip_if_unavailable`
+
+<!-- FIXME: Write this subsection. -->
+
+## Acknowledgements
+
+<!-- Write this section. -->

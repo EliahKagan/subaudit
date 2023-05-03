@@ -12,6 +12,7 @@
         "docstrings",
         "dunder",
         "Eliah",
+        "globbing",
         "ipynb",
         "Kagan",
         "nullcontext",
@@ -19,6 +20,7 @@
         "PosixPath",
         "prng",
         "readline",
+        "rglob",
         "subaudit",
         "subinterpreter",
         "sysaudit"
