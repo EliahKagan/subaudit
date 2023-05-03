@@ -237,11 +237,17 @@ Whether `extracting` uses `listening`, or directly calls `subscribe` and
 
 ### Locking
 
-An audit hook installed by a `Hook` object—including the global `Hook` instance
-used by the top-level functions—does not perform explicit locking. This is to
-avoid the performance hit of locking frequently, since an audit hook is called
-for all audit events, including those the hook does not act on. Instead, it
-relies on the implementation providing these operations atomically:
+Consider two possible cases of race conditions:
+
+#### 1. Between a the audit hook and `subscribe` or `unsubscribe` (no locking)
+
+In this scenario, a `Hook` object's installed audit hook runs at the same time
+as a listener is subscribed or unsubscribed.
+
+This is likely to occur often and it cannot be prevented, because audit hooks
+are called for all audit events. For the same reason, locking in the audit hook
+has performance implications. Instead of having audit hooks take locks,
+subaudit relies on each of these operations being atomic:
 
 - Writing an attribute reference, when it is a simple write to an instance
   dictionary or a slot. Writing an attribute need not be atomic when, for
@@ -250,16 +256,23 @@ relies on the implementation providing these operations atomically:
   Note that the search need not be atomic, but the dictionary must always be
   observed to be in a valid state.
 
-Although the *audit hook* does not perform locking, *subscribing and
-unsubscribing* listeners from it is another matter. That is, by default,
-synchronized with a `threading.Lock`, to ensure that currently subscribing
-and/or unsubscribing listeners does not corrupt shared state.
+#### 2. Between calls to `subscribe` and/or `unsubscribe` (locking by default)
 
-You should not usually change this, and it is unlikely to be a performance
-bottleneck. But if you want to change it, you can construct a `Hook` object by
-calling `Hook(sub_lock_factory=...)` instead of `Hook`, where `...` is a type
-or other context manager factory to be used instead of `threading.Lock`. In
-particular, to disable locking, pass `contextlib.nullcontext`.
+In this scenario, two listeners are subscribed at a time, or unsubscribed at a
+time, or one listener is subscribed while another (or the same) listener is
+unsubscribed.
+
+This is less likely to occur and much easier to avoid. But it is also harder to
+make safe without a lock. Subscribing and unsubscribing are unlikely to happen
+occur at a *sustained* high rate, so locking is unlikely to be a performance
+bottleneck. So, *by default*, subscribing and unsubscribing are synchronized
+with a `threading.Lock`, to ensure that shared state is not corrupted.
+
+You should not usually change this. But if you want to, you can construct a
+`Hook` object by calling `Hook(sub_lock_factory=...)` instead of `Hook`, where
+`...` is a type or other context manager factory to be used instead of
+`threading.Lock`. In particular, to disable locking, pass
+`contextlib.nullcontext`.
 
 ## Functions related to compatibility
 
