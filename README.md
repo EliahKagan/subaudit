@@ -334,29 +334,43 @@ class TestSomeMoreThings(unittest.TestCase):
     ...
 ```
 
-Although a conditional xfail (expected failure) decorator, as well as skip and
-xfail marks for pytest, would be useful, subaudit does not currently provide
-them. Of course, you can still use the `@pytest.mark.skip` and
-`@pytest.mark.xfail` decorators to achieve this, by passing `sys.version_info <
-(3, 8)` as the condition.
+Although a conditional xfail ([expected
+failure](https://docs.python.org/3/library/unittest.html#unittest.expectedFailure))
+decorator, as well as specialized
+[skip](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#skipping-test-functions)/[skipif](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#id1)
+and
+[xfail](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail)
+[marks](https://docs.pytest.org/en/7.1.x/how-to/mark.html) for
+[pytest](https://docs.pytest.org/), would be useful, subaudit does not
+currently provide them. Of course, you can still use the [`@pytest.mark.skip`
+and
+`@pytest.mark.xfail`](https://docs.pytest.org/en/7.3.x/how-to/skipping.html)
+decorators to achieve this, by passing `sys.version_info < (3, 8)` as the
+condition.
 
 ## Overview by level of abstraction
 
 From higher to lower level, from the perspective of the top-level `listening`
 and `extracting` functions:
 
-- `subaudit.extracting` - context manager that listens and extracts to a list
-- `subaudit.listening` - context manager to subscribe and unsubscribe a custom
-  listener *(usually use this)*
-- `subaudit.subscribe` and `subaudit.unsubscribe` - manually
-  subscribe/unsubscribe a listener
-- `subaudit.Hook` - abstraction around an audit hook allowing subscribing and
-  unsubscribing for specific events, with `extracting`, `listening`,
-  `subscribe`, and `unsubscribe` instance methods
-- `subaudit.addaudithook` - trivial abstraction representing whether the
-  function from `sys` or `sysaudit` is used
-- `sys.addaudithook` or `sysaudit.addaudithook` - *not part of subaudit* -
-  install a [PEP 578](https://peps.python.org/pep-0578/) audit hook
+- [`subaudit.extracting`](#the-subauditextracting-context-manager) - context
+  manager that listens and extracts to a list
+- [`subaudit.listening`](#the-subauditlistening-context-manager) - context
+  manager to subscribe and unsubscribe a custom listener *(usually use this)*
+- [`subaudit.subscribe` and
+  `subaudit.unsubscribe`](#subauditsubscribe-and-subauditunsubscribe) -
+  manually subscribe/unsubscribe a listener
+- [`subaudit.Hook`](#subaudithook-objects) - abstraction around an audit hook
+  allowing subscribing and unsubscribing for specific events, with
+  `extracting`, `listening`, `subscribe`, and `unsubscribe` instance methods
+- [`subaudit.addaudithook`](#subauditaddaudithook-and-subauditaudit) - trivial
+  abstraction representing whether the function from `sys` or `sysaudit` is
+  used
+- [`sys.addaudithook`](https://docs.python.org/3/library/sys.html#sys.addaudithook)
+  or
+  [`sysaudit.addaudithook`](https://sysaudit.readthedocs.io/en/latest/#sysaudit.addaudithook)
+  \- *not part of subaudit* - install a [PEP
+  578](https://peps.python.org/pep-0578/) audit hook
 
 This list is not exhaustive. For example, `@skip_if_unavailable` is not part of
 that conceptual hierarchy.
@@ -365,11 +379,11 @@ that conceptual hierarchy.
 
 I'd like to thank:
 
-- [Brett Langdon](https://github.com/brettlangdon), who wrote the
+- [**Brett Langdon**](https://github.com/brettlangdon), who wrote the
   [sysaudit](https://github.com/brettlangdon/sysaudit) library (which subaudit
   [uses on 3.7](#compatibility)).
-- [David Vassallo](https://github.com/dmvassallo), for code review that led to
-  the {FINISH THIS SECTION}
+- [**David Vassallo**](https://github.com/dmvassallo), for code review that led
+  to the ***{FINISH THIS SECTION}***
 
 ## About the name
 
