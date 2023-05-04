@@ -153,7 +153,7 @@ with contextlib.suppress(ValueError):
 To unsubscribe a listener from an event, it must be subscribed to the event.
 Subject to this restriction, calls to [`subscribe` and
 `unsubscribe`](#subauditsubscribe-and-subauditunsubscribe) can happen in any
-order and use of [`listening`](#the-subauditlistening-context-manager) and
+order, and [`listening`](#the-subauditlistening-context-manager) and
 [`extracting`](#the-subauditextracting-context-manager) may be arbitrarily
 nested.
 
@@ -219,11 +219,11 @@ purposes:
 - It facilitates customization, as detailed below.
 
 The actual audit hook that a `Hook` object encapsulates is not installed until
-the first listener is subscribed. This happens on the first call to the
-object’s `subscribe` method, or the first time a context manager object
-obtained by calling its `listening` or `extracting` method is entered. This is
-also true of the global `Hook` instance used by the top-level functions—merely
-importing `subaudit` does not install an audit hook.
+the first listener is subscribed. This happens on the first call to its
+`subscribe` method, or the first time one of its context managers (from calling
+its `listening` or `extracting` method) is entered. This is also true of the
+global `Hook` instance used by the top-level functions—merely importing
+`subaudit` does not install an audit hook.
 
 Whether the top-level functions are bound methods of a `Hook` instance, or
 delegate in some other way to those methods on an instance, is currently
@@ -254,11 +254,11 @@ are called for all audit events. For the same reason, locking in the audit hook
 has performance implications. Instead of having audit hooks take locks,
 subaudit relies on each of these operations being atomic:
 
-- Writing an attribute reference, when it is a simple write to an instance
-  dictionary or a slot. Writing an attribute need not be atomic when, for
+- *Writing an attribute reference, when it is a simple write to an instance
+  dictionary or a slot.* Writing an attribute need not be atomic when, for
   example, `__setattr__` has been overridden.
-- Writing or deleting a ``str`` key in a dictionary whose keys are all of the
-  built-in ``str`` type. Note that the search need not be atomic, but the
+- *Writing or deleting a ``str`` key in a dictionary whose keys are all of the
+  built-in ``str`` type.* Note that the search need not be atomic, but the
   dictionary must always be observed to be in a valid state.
 
 The audit hook is written, and the data structures it uses are selected, to
@@ -280,7 +280,7 @@ to ensure that shared state is not corrupted.
 
 You should not usually change this. But if you want to, you can construct a
 `Hook` object by calling `Hook(sub_lock_factory=...)` instead of `Hook`, where
-`...` is a type or other context manager factory to be used instead of
+`...` is a type, or other context manager factory, to be used instead of
 `threading.Lock`. In particular, to disable locking, pass
 [`contextlib.nullcontext`](https://docs.python.org/3/library/contextlib.html#contextlib.nullcontext).
 
@@ -305,9 +305,9 @@ subaudit exports `addaudithook` and `audit` functions.
 
 subaudit uses `subaudit.addaudithook` when it adds its own audit hook (or all
 its own hooks, if you use additional [`Hook`](#subaudithook-objects) instances
-besides the global one implicitly used by the top-level functions). subaudit
-does not itself use `subaudit.audit`, but it is whichever `audit` function
-corresponds to `subaudit.addaudithook`.
+besides the global one implicitly used by [the top-level
+functions](#basic-usage)). subaudit does not itself use `subaudit.audit`, but
+it is whichever `audit` function corresponds to `subaudit.addaudithook`.
 
 ### `@subaudit.skip_if_unavailable`
 
@@ -399,7 +399,7 @@ I’d like to thank:
   [uses on 3.7](#compatibility)).
 
 - [**David Vassallo**](https://github.com/dmvassallo), for reviewing pull
-  requests about testing audit hooks in [a project we have collaborated
+  requests about testing using audit hooks in [a project we have collaborated
   on](https://github.com/dmvassallo/EmbeddingScratchwork), which helped me to
   recognize what kinds of usage were more or less clear and that it could be
   good to have a library like subaudit; and for coauthoring the
