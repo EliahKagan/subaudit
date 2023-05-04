@@ -15,9 +15,9 @@
 Fixtures used in multiple test modules.
 
 This contains fixture functions, and any needed return types for annotating
-tests that (and other fixtures) that uses the fixtures. Because pytest takes
-care of making fixures available, only the return types should be explicitly
-accessed in, or imported from, this module.
+tests (and other fixtures) that use the fixtures. Because pytest takes care of
+making fixures available, only the return types should be explicitly accessed
+in, or imported from, this module.
 
 Any other test helpers used in multiple modules are in ``tests/_helpers.py``.
 """

@@ -36,11 +36,11 @@ flake8 = { version = "^6.0.0", python = ">=3.8.1,<4.0" }
 isort = "~5.11.5"
 mypy = "^1.2.0"
 pylint = { version = "^2.17.3", python = ">=3.7.2,<4.0" }
-pyright = "^1.1.305"
+pyright = "^1.1.306"
 
 [tool.poetry.group.notebook.dependencies]
 ipykernel = { version = "^6.22.0", python = ">=3.8,<4.0" }
-ipython = { version = "~8.12.1", python = ">=3.8,<4.0" }
+ipython = { version = "~8.12.2", python = ">=3.8,<4.0" }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
