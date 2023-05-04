@@ -317,9 +317,9 @@ a test that a file has been opened by listening to the `open` event—should
 typically be skipped when running a test suite on Python 3.7.
 
 **When using the [unittest](https://docs.python.org/3/library/unittest.html)
-framework**, the `@skip_if_unavailable` decorator can be applied to a test
-class or test method so it is skipped prior to Python 3.8, with a message
-explaining why. For example:
+framework**, you can apply the `@skip_if_unavailable` decorator to a test class
+or test method, so it is skipped prior to Python 3.8 with a message explaining
+why. For example:
 
 ```python
 import unittest
@@ -402,7 +402,7 @@ I'd like to thank:
 
 ## About the name
 
-This library is called subaudit because it provides a way to effectively
+This library is called "subaudit" because it provides a way to effectively
 *sub*scribe to and un*sub*scribe from a *sub*set of audit events rather than
 all of them.
 
