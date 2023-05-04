@@ -20,11 +20,11 @@ are called on all events, and they remain in place until the interpreter shuts
 down.
 
 This library provides a higher-level interface that allows listeners to be
-subscribed to specific audit events, and unsubscribed from them. It also
-provides [context managers](#basic-usage) for using that interface with a
-convenient notation that ensures the listener is unsubscribed. The context
-managers are reentrant—you can nest `with`-statements that listen to events. By
-default, a single audit hook is used for any number of events and listeners.
+subscribed to specific audit events, and unsubscribed from them. It provides
+[context managers](#basic-usage) for using that interface with a convenient
+notation that ensures the listener is unsubscribed. The context managers are
+reentrant—you can nest `with`-statements that listen to events. By default, a
+single audit hook is used for any number of events and listeners.
 
 The primary use case for this library is in writing test code.
 
@@ -57,8 +57,7 @@ may exist Python implementations on which these assumptions don't hold.
 
 ### The `subaudit.listening` context manager
 
-The best way to use subaudit is usually the `subaudit.listening` context
-manager.
+The best way to use subaudit is usually the `listening` context manager.
 
 ```python
 import subaudit
@@ -76,8 +75,11 @@ arguments (not as an `args` tuple).
 
 In tests, it is convenient to use [`Mock`
 objects](https://docs.python.org/3/library/unittest.mock.html#the-mock-class)
-as listeners, since they record calls and provide a `mock_calls` attribute to
-see them and various `assert_*` methods to make assertions about them:
+as listeners, because they record calls, provide a
+[`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls)
+attribute to see the calls, and provide [various `assert_*`
+methods](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called)
+to make assertions about the calls:
 
 ```python
 from unittest.mock import ANY, Mock
@@ -101,7 +103,7 @@ from dataclasses import InitVar, dataclass
 import subaudit
 
 @dataclass(frozen=True)
-class PathAndMode:  # See notebooks/open_event.ipynb about path and mode types.
+class PathAndMode:  # Usually str and int. See notebooks/open_event.ipynb.
     path: str
     mode: int
     flags: InitVar = None  # Opt not to record this argument.
@@ -168,13 +170,13 @@ with subaudit.listening('open', print):  # Print all open events' arguments.
         with subaudit.listening('glob.glob', listen_to.glob):  # Log globbing.
             ...  # Do something that may raise the events.
 
-assert parent.mock_calls == ...  # Assert a specific order of calls.
+assert listen_to.mock_calls == ...  # Assert a specific order of calls.
 ```
 
-(That is written out to make the nesting clear. You can, as always, use a
-single `with`-statement with commas instead.)
+(That is written out to make the nesting clear. You could also use a single
+`with`-statement with commas.)
 
-Here's an example with both `listening` and `extracting` contexts.
+Here's an example with both `listening` and `extracting` contexts:
 
 ```python
 from unittest.mock import Mock, call
@@ -258,6 +260,9 @@ subaudit relies on each of these operations being atomic:
 - Writing or deleting a ``str`` key in a dictionary whose keys are all of the
   built-in ``str`` type. Note that the search need not be atomic, but the
   dictionary must always be observed to be in a valid state.
+
+The audit hook is written, and the data structures it uses are selected, to
+avoid relying on more than these assumptions.
 
 #### 2. Between calls to `subscribe`/`unsubscribe` (by default, they lock)
 
@@ -397,15 +402,11 @@ I'd like to thank:
   requests about testing audit hooks in [a project we have collaborated
   on](https://github.com/dmvassallo/EmbeddingScratchwork), which helped me to
   recognize what kinds of usage were more or less clear and that it could be
-  good to have a library like subaudit; and for the `@skip_if_unavailable`
-  decorator in that project, which motivated the one here.
+  good to have a library like subaudit; and for coauthoring the
+  `@skip_if_unavailable` decorator used there, which motivated the one here.
 
 ## About the name
 
 This library is called "subaudit" because it provides a way to effectively
 *sub*scribe to and un*sub*scribe from a *sub*set of audit events rather than
 all of them.
-
-<!--
-  FIXME: Say something about the *incidental* connection to subinterpreters.
--->
