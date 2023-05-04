@@ -351,7 +351,7 @@ and `extracting` functions:
 - `subaudit.subscribe` and `subaudit.unsubscribe` - manually
   subscribe/unsubscribe a listener
 - `subaudit.Hook` - abstraction around an audit hook allowing subscribing and
-  unsubscribing to specific events, with `extracting`, `listening`,
+  unsubscribing for specific events, with `extracting`, `listening`,
   `subscribe`, and `unsubscribe` instance methods
 - `subaudit.addaudithook` - trivial abstraction representing whether the
   function from `sys` or `sysaudit` is used
@@ -363,7 +363,13 @@ that conceptual hierarchy.
 
 ## Acknowledgements
 
-<!-- FIXME: Write this section. -->
+I'd like to thank:
+
+- [Brett Langdon](https://github.com/brettlangdon), who wrote the
+  [sysaudit](https://github.com/brettlangdon/sysaudit) library (which subaudit
+  [uses on 3.7](#compatibility)).
+- [David Vassallo](https://github.com/dmvassallo), for code review that led to
+  the {FINISH THIS SECTION}
 
 ## About the name
 

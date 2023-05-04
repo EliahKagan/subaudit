@@ -15,6 +15,7 @@
         "globbing",
         "ipynb",
         "Kagan",
+        "Langdon",
         "nullcontext",
         "pathlib",
         "PosixPath",
@@ -25,6 +26,7 @@
         "subaudit",
         "subinterpreter",
         "sysaudit",
+        "Vassallo",
         "xfail"
     ],
     "python.testing.pytestArgs": [
