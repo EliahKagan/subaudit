@@ -276,13 +276,69 @@ You should not usually change this. But if you want to, you can construct a
 
 ## Functions related to compatibility
 
+As [noted above](#compatibility), Python supports audit hooks [since
+3.8](https://peps.python.org/pep-0578/). For Python 3.7, but not Python 3.8 or
+later, the subaudit library declares
+[sysaudit](https://pypi.org/project/sysaudit/) as a dependency.
+
 ### `subaudit.addaudithook` and `subaudit.audit`
 
-The `addaudithook` and `audit` functions
+subaudit exports `addaudithook` and `audit` functions.
+
+- On Python 3.8 and later, `subaudit.addaudithook` and `subaudit.audit` are
+  `sys.addaudithook` and `sys.audit`.
+- On Python 3.7, `subaudit.addaudithook` and `subaudit.audit` are
+  `sysaudit.addaudithook` and `sysaudit.audit`.
+
+subaudit uses `subaudit.addaudithook` when it adds its own audit hook (or all
+its own hooks, if you use additional `Hook` instances besides the global one
+implicitly used by the top-level functions). subaudit does not itself use
+`subaudit.audit`, but it is whatever `audit` function corresponds to
+`subaudit.addaudithook`.
 
 ### `@subaudit.skip_if_unavailable`
 
-<!-- FIXME: Write this subsection. -->
+The primary use case for subaudit is in writing unit tests, to assert that
+particular events have been raised. Usually these are ["built in"
+events](https://docs.python.org/3.8/library/audit_events.html)—those raised by
+the Python interpreter or standard library. But the sysaudit library doesn't
+backport those events, which would not really be feasible to do.
+
+For this reason, tests that particular audit events occurred—such as a test
+that a file has been opened by listening to the `open` event—should typically
+be skipped when running a test suite on Python 3.7.
+
+**When using the `unittest` framework**, the `@skip_if_unavailable` decorator
+can be applied to a test class or test method so it is skipped prior to Python
+3.8, with a message explaining why. For example:
+
+```python
+import unittest
+from unittest.mock import ANY, Mock
+import subaudit
+
+class TestSomeThings(unittest.TestCase):
+    ...
+
+    @subaudit.skip_if_unavailable  # Skip this test if < 3.8, with a message.
+    def test_file_is_opened_for_read(self):
+        with subaudit.listening('open', Mock()) as listener:
+            ...  # Do something that may raise the event.
+
+        listener.assert_any_call('/path/to/file.txt', 'r', ANY)
+
+    ...
+
+@subaudit.skip_if_unavailable  # Skip the whole class if < 3.8, with a message.
+class TestSomeMoreThings(unittest.TestCase):
+    ...
+```
+
+Although a conditional xfail (expected failure) decorator, as well as skip and
+xfail marks for pytest, would be useful, subaudit does not currently provide
+them. Of course, you can still use the `@pytest.mark.skip` and
+`@pytest.mark.xfail` decorators to achieve this, by passing `sys.version_info <
+(3, 8)` as the condition.
 
 ## Overview by level of abstraction
 
@@ -297,8 +353,8 @@ and `extracting` functions:
 - `subaudit.Hook` - abstraction around an audit hook allowing subscribing and
   unsubscribing to specific events, with `extracting`, `listening`,
   `subscribe`, and `unsubscribe` instance methods
-- `subaudit.addaudithook` - trivial abstraction representing whether the `sys`
-  or `sysaudit` function is used
+- `subaudit.addaudithook` - trivial abstraction representing whether the
+  function from `sys` or `sysaudit` is used
 - `sys.addaudithook` or `sysaudit.addaudithook` - *not part of subaudit* -
   install a [PEP 578](https://peps.python.org/pep-0578/) audit hook
 

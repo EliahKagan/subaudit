@@ -19,11 +19,13 @@
         "pathlib",
         "PosixPath",
         "prng",
+        "pytest",
         "readline",
         "rglob",
         "subaudit",
         "subinterpreter",
-        "sysaudit"
+        "sysaudit",
+        "xfail"
     ],
     "python.testing.pytestArgs": [
         "tests"
