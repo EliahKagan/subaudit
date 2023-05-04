@@ -31,8 +31,8 @@ The primary use case for this library is in writing test code.
 ## License
 
 subaudit is licensed under [0BSD](https://spdx.org/licenses/0BSD.html), which
-is a ["public-domain
-equivalent"](https://en.wikipedia.org/wiki/Public-domain-equivalent_license)
+is a [“public-domain
+equivalent”](https://en.wikipedia.org/wiki/Public-domain-equivalent_license)
 license. See
 [**`LICENSE`**](https://github.com/EliahKagan/subaudit/blob/main/LICENSE).
 
@@ -51,7 +51,7 @@ any events, so only custom events can be used on Python 3.7.
 To avoid the performance cost of explicit locking in the audit hook, [some
 operations are assumed atomic](#locking). I believe these assumptions are
 correct for CPython, as well as PyPy and some other implementations, but there
-may exist Python implementations on which these assumptions don't hold.
+may exist Python implementations on which these assumptions don’t hold.
 
 ## Basic usage
 
@@ -158,7 +158,7 @@ order and use of [`listening`](#the-subauditlistening-context-manager) and
 nested.
 
 `listening` and `extracting` support reentrant use with both the same event and
-different events. Here's an example with three `listening` contexts:
+different events. Here’s an example with three `listening` contexts:
 
 ```python
 from unittest.mock import Mock, call
@@ -176,7 +176,7 @@ assert listen_to.mock_calls == ...  # Assert a specific order of calls.
 (That is written out to make the nesting clear. You could also use a single
 `with`-statement with commas.)
 
-Here's an example with both `listening` and `extracting` contexts:
+Here’s an example with both `listening` and `extracting` contexts:
 
 ```python
 from unittest.mock import Mock, call
@@ -220,7 +220,7 @@ purposes:
 
 The actual audit hook that a `Hook` object encapsulates is not installed until
 the first listener is subscribed. This happens on the first call to the
-object's `subscribe` method, or the first time a context manager object
+object’s `subscribe` method, or the first time a context manager object
 obtained by calling its `listening` or `extracting` method is entered. This is
 also true of the global `Hook` instance used by the top-level functions—merely
 importing `subaudit` does not install an audit hook.
@@ -246,7 +246,7 @@ Consider two possible cases of race conditions:
 
 #### 1. Between audit hook and `subscribe`/`unsubscribe` (audit hook does not lock)
 
-In this scenario, a `Hook` object's installed audit hook runs at the same time
+In this scenario, a `Hook` object’s installed audit hook runs at the same time
 as a listener is subscribed or unsubscribed.
 
 This is likely to occur often and it cannot be prevented, because audit hooks
@@ -312,12 +312,12 @@ corresponds to `subaudit.addaudithook`.
 ### `@subaudit.skip_if_unavailable`
 
 The primary use case for subaudit is in writing unit tests, to assert that
-particular events have been raised or not raised. Usually these are ["built in"
+particular events have been raised or not raised. Usually these are [“built in”
 events](https://docs.python.org/3.8/library/audit_events.html)—those raised by
-the Python interpreter or standard library. But the sysaudit library doesn't
+the Python interpreter or standard library. But the sysaudit library doesn’t
 backport those events, which would not really be feasible to do.
 
-For this reason, tests that particular audit events did or didn't occur—such as
+For this reason, tests that particular audit events did or didn’t occur—such as
 a test that a file has been opened by listening to the `open` event—should
 typically be skipped when running a test suite on Python 3.7.
 
@@ -392,7 +392,7 @@ conceptual hierarchy.
 
 ## Acknowledgements
 
-I'd like to thank:
+I’d like to thank:
 
 - [**Brett Langdon**](https://github.com/brettlangdon), who wrote the
   [sysaudit](https://github.com/brettlangdon/sysaudit) library (which subaudit
@@ -407,6 +407,6 @@ I'd like to thank:
 
 ## About the name
 
-This library is called "subaudit" because it provides a way to effectively
+This library is called “subaudit” because it provides a way to effectively
 *sub*scribe to and un*sub*scribe from a *sub*set of audit events rather than
 all of them.
