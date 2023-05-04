@@ -149,8 +149,11 @@ with contextlib.suppress(ValueError):
 ## Nesting
 
 To unsubscribe a listener from an event, it must be subscribed to the event.
-Subject to this restriction, calls to `subscribe` and `unsubscribe` can happen
-in any order and use of `listening` and `extracting` may be arbitrarily nested.
+Subject to this restriction, calls to [`subscribe` and
+`unsubscribe`](#subauditsubscribe-and-subauditunsubscribe) can happen in any
+order and use of [`listening`](#the-subauditlistening-context-manager) and
+[`extracting`](#the-subauditextracting-context-manager) may be arbitrarily
+nested.
 
 `listening` and `extracting` support reentrant use with both the same event and
 different events. Here's an example with three `listening` contexts:
@@ -206,9 +209,9 @@ methods corresponding to the four top-level functions listed above. Separate
 `Hook` instances use separate audit hooks. The `Hook` class exists for three
 purposes:
 
-- It supplies the behavior of the top-level `listening`, `extracting`,
-  `subscribe`, and `unsubscribe` functions, which correspond to the same-named
-  methods on a global `Hook` instance.
+- It supplies the behavior of [the top-level `listening`, `extracting`,
+  `subscribe`, and `unsubscribe` functions](#basic-usage), which correspond to
+  the same-named methods on a global `Hook` instance.
 - It allows multiple audit hooks to be used, for special cases where that might
   be desired.
 - It facilitates customization, as detailed below.
@@ -239,7 +242,7 @@ Whether `extracting` uses `listening`, or directly calls `subscribe` and
 
 Consider two possible cases of race conditions:
 
-#### 1. Between a the audit hook and `subscribe` or `unsubscribe` (no locking)
+#### 1. Between audit hook and `subscribe`/`unsubscribe` (audit hook does not lock)
 
 In this scenario, a `Hook` object's installed audit hook runs at the same time
 as a listener is subscribed or unsubscribed.
@@ -252,11 +255,11 @@ subaudit relies on each of these operations being atomic:
 - Writing an attribute reference, when it is a simple write to an instance
   dictionary or a slot. Writing an attribute need not be atomic when, for
   example, `__setattr__` has been overridden.
-- Writing or deleting a ``str`` key in a dictionary whose keys are all ``str``.
-  Note that the search need not be atomic, but the dictionary must always be
-  observed to be in a valid state.
+- Writing or deleting a ``str`` key in a dictionary whose keys are all of the
+  built-in ``str`` type. Note that the search need not be atomic, but the
+  dictionary must always be observed to be in a valid state.
 
-#### 2. Between calls to `subscribe` and/or `unsubscribe` (locking by default)
+#### 2. Between calls to `subscribe`/`unsubscribe` (by default, they lock)
 
 In this scenario, two listeners are subscribed at a time, or unsubscribed at a
 time, or one listener is subscribed while another (or the same) listener is
@@ -266,13 +269,15 @@ This is less likely to occur and much easier to avoid. But it is also harder to
 make safe without a lock. Subscribing and unsubscribing are unlikely to happen
 at a *sustained* high rate, so locking is unlikely to be a performance
 bottleneck. So, *by default*, subscribing and unsubscribing are synchronized
-with a `threading.Lock`, to ensure that shared state is not corrupted.
+with a
+[`threading.Lock`](https://docs.python.org/3/library/threading.html#threading.Lock),
+to ensure that shared state is not corrupted.
 
 You should not usually change this. But if you want to, you can construct a
 `Hook` object by calling `Hook(sub_lock_factory=...)` instead of `Hook`, where
 `...` is a type or other context manager factory to be used instead of
 `threading.Lock`. In particular, to disable locking, pass
-`contextlib.nullcontext`.
+[`contextlib.nullcontext`](https://docs.python.org/3/library/contextlib.html#contextlib.nullcontext).
 
 ## Functions related to compatibility
 
@@ -285,32 +290,36 @@ later, the subaudit library declares
 
 subaudit exports `addaudithook` and `audit` functions.
 
-- On Python 3.8 and later, `subaudit.addaudithook` and `subaudit.audit` are
-  `sys.addaudithook` and `sys.audit`.
-- On Python 3.7, `subaudit.addaudithook` and `subaudit.audit` are
-  `sysaudit.addaudithook` and `sysaudit.audit`.
+- On Python 3.8 and later, they are
+  [`sys.addaudithook`](https://docs.python.org/3/library/sys.html#sys.addaudithook)
+  and [`sys.audit`](https://docs.python.org/3/library/sys.html#sys.audit).
+- On Python 3.7, they are
+  [`sysaudit.addaudithook`](https://sysaudit.readthedocs.io/en/latest/#sysaudit.addaudithook)
+  and
+  [`sysaudit.audit`](https://sysaudit.readthedocs.io/en/latest/#sysaudit.audit).
 
 subaudit uses `subaudit.addaudithook` when it adds its own audit hook (or all
-its own hooks, if you use additional `Hook` instances besides the global one
-implicitly used by the top-level functions). subaudit does not itself use
-`subaudit.audit`, but it is whatever `audit` function corresponds to
-`subaudit.addaudithook`.
+its own hooks, if you use additional [`Hook`](#subaudithook-objects) instances
+besides the global one implicitly used by the top-level functions). subaudit
+does not itself use `subaudit.audit`, but it is whichever `audit` function
+corresponds to `subaudit.addaudithook`.
 
 ### `@subaudit.skip_if_unavailable`
 
 The primary use case for subaudit is in writing unit tests, to assert that
-particular events have been raised. Usually these are ["built in"
+particular events have been raised or not raised. Usually these are ["built in"
 events](https://docs.python.org/3.8/library/audit_events.html)—those raised by
 the Python interpreter or standard library. But the sysaudit library doesn't
 backport those events, which would not really be feasible to do.
 
-For this reason, tests that particular audit events occurred—such as a test
-that a file has been opened by listening to the `open` event—should typically
-be skipped when running a test suite on Python 3.7.
+For this reason, tests that particular audit events did or didn't occur—such as
+a test that a file has been opened by listening to the `open` event—should
+typically be skipped when running a test suite on Python 3.7.
 
-**When using the `unittest` framework**, the `@skip_if_unavailable` decorator
-can be applied to a test class or test method so it is skipped prior to Python
-3.8, with a message explaining why. For example:
+**When using the [unittest](https://docs.python.org/3/library/unittest.html)
+framework**, the `@skip_if_unavailable` decorator can be applied to a test
+class or test method so it is skipped prior to Python 3.8, with a message
+explaining why. For example:
 
 ```python
 import unittest
@@ -334,24 +343,24 @@ class TestSomeMoreThings(unittest.TestCase):
     ...
 ```
 
-Although a conditional xfail ([expected
+It could be useful also to have a conditional xfail ([expected
 failure](https://docs.python.org/3/library/unittest.html#unittest.expectedFailure))
-decorator, as well as specialized
+decorator for unittest—and, more so,
+[marks](https://docs.pytest.org/en/7.1.x/how-to/mark.html) for
+[pytest](https://docs.pytest.org/) providing specialized
 [skip](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#skipping-test-functions)/[skipif](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#id1)
 and
-[xfail](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail)
-[marks](https://docs.pytest.org/en/7.1.x/how-to/mark.html) for
-[pytest](https://docs.pytest.org/), would be useful, subaudit does not
-currently provide them. Of course, you can still use the [`@pytest.mark.skip`
-and
+[xfail](https://docs.pytest.org/en/7.3.x/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail)—but
+subaudit does not currently provide them. Of course, in pytest, you can still
+use the [`@pytest.mark.skip` and
 `@pytest.mark.xfail`](https://docs.pytest.org/en/7.3.x/how-to/skipping.html)
-decorators to achieve this, by passing `sys.version_info < (3, 8)` as the
-condition.
+decorators, by passing `sys.version_info < (3, 8)` as the condition.
 
 ## Overview by level of abstraction
 
-From higher to lower level, from the perspective of the top-level `listening`
-and `extracting` functions:
+From higher to lower level, from the perspective of the top-level
+[`listening`](#the-subauditlistening-context-manager) and
+[`extracting`](#the-subauditextracting-context-manager) functions:
 
 - [`subaudit.extracting`](#the-subauditextracting-context-manager) - context
   manager that listens and extracts to a list
@@ -372,8 +381,9 @@ and `extracting` functions:
   \- *not part of subaudit* - install a [PEP
   578](https://peps.python.org/pep-0578/) audit hook
 
-This list is not exhaustive. For example, `@skip_if_unavailable` is not part of
-that conceptual hierarchy.
+This list is not exhaustive. For example,
+[`@skip_if_unavailable`](#subauditskip_if_unavailable) is not part of that
+conceptual hierarchy.
 
 ## Acknowledgements
 
@@ -382,8 +392,13 @@ I'd like to thank:
 - [**Brett Langdon**](https://github.com/brettlangdon), who wrote the
   [sysaudit](https://github.com/brettlangdon/sysaudit) library (which subaudit
   [uses on 3.7](#compatibility)).
-- [**David Vassallo**](https://github.com/dmvassallo), for code review that led
-  to the ***{FINISH THIS SECTION}***
+
+- [**David Vassallo**](https://github.com/dmvassallo), for reviewing pull
+  requests about testing audit hooks in [a project we have collaborated
+  on](https://github.com/dmvassallo/EmbeddingScratchwork), which helped me to
+  recognize what kinds of usage were more or less clear and that it could be
+  good to have a library like subaudit; and for the `@skip_if_unavailable`
+  decorator in that project, which motivated the one here.
 
 ## About the name
 
