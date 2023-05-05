@@ -40,7 +40,6 @@ pyright = "^1.1.306"
 
 [tool.poetry.group.notebook.dependencies]
 ipykernel = { version = "^6.22.0", python = ">=3.8,<4.0" }
-ipython = { version = "~8.12.2", python = ">=3.8,<4.0" }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
