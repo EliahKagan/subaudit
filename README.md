@@ -103,7 +103,7 @@ from dataclasses import InitVar, dataclass
 import subaudit
 
 @dataclass(frozen=True)
-class PathAndMode:  # Usually str and int. See notebooks/open_event.ipynb.
+class PathAndMode:  # Usually strings. See examples/notebooks/open_event.ipynb.
     path: str
     mode: str
     flags: InitVar = None  # Opt not to record this argument.
