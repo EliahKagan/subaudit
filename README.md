@@ -105,7 +105,7 @@ import subaudit
 @dataclass(frozen=True)
 class PathAndMode:  # Usually str and int. See notebooks/open_event.ipynb.
     path: str
-    mode: int
+    mode: str
     flags: InitVar = None  # Opt not to record this argument.
 
 with subaudit.extracting('open', PathAndMode) as extracts:
@@ -132,7 +132,7 @@ import subaudit
 def listen_open(path, mode, flags):
     ...  # Handle the event.
 
-subaudit.subscribe('open' listen_open)
+subaudit.subscribe('open', listen_open)
 try:
     ...  # Do something that may raise the event.
 finally:
