@@ -402,8 +402,9 @@ I’d like to thank:
   requests about testing using audit hooks in [a project we have collaborated
   on](https://github.com/dmvassallo/EmbeddingScratchwork), which helped me to
   recognize what kinds of usage were more or less clear and that it could be
-  good to have a library like subaudit; and for coauthoring the
-  `@skip_if_unavailable` decorator used there, which motivated the one here.
+  good to have a library like subaudit; and for coauthoring a
+  `@skip_if_unavailable` decorator that had been used there, which motivated
+  the one here.
 
 ## About the name
 
