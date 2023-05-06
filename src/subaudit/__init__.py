@@ -151,9 +151,10 @@ class Hook:
         """
         Make an audit hook wrapper, which will use its own audit hook.
 
-        If ``sub_lock_factory`` is passed, it is called and the result must be
-        a context manager object, which is used as a mutex during subscribing
-        and unsubscribing. To forgo locking, pass ``contextlib.nullcontext``.
+        :param sub_lock_factory: If passed, this is called instead of
+            ``threading.Lock`` to create a context manager object, which is
+            used as a mutex during subscribing and unsubscribing. To forgo
+            locking, pass ``contextlib.nullcontext``.
         """
         if sub_lock_factory is None:
             sub_lock_factory = threading.Lock
@@ -166,7 +167,12 @@ class Hook:
         return f'<{type(self).__name__} at {id(self):#x}: {self._summarize()}>'
 
     def subscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Attach a detachable listener to an event."""
+        """
+        Attach a detachable listener to an event.
+
+        :param event: The name of the event to subscribe the listener to.
+        :param listener: The callable listener to be subscribed to the event.
+        """
         # Produce a suitable key for the event, raising TypeError if we can't.
         if type(event) is not str:
             if not isinstance(event, str):
@@ -182,7 +188,13 @@ class Hook:
             self._table[event] = (*old_listeners, listener)
 
     def unsubscribe(self, event: str, listener: Callable[..., None]) -> None:
-        """Detach a listener that was attached to an event."""
+        """
+        Detach a listener that was attached to an event.
+
+        :param event: The name of the event to unsubscribe the listener from.
+        :param listener: The callable listener to be unsubscribed from the
+            event.
+        """
         with self._lock:
             try:
                 listeners = self._table[event]
@@ -206,13 +218,33 @@ class Hook:
                 del self._table[event]
 
     def listening(self, event: str, listener: _F) -> ContextManager[_F]:
-        """Context manager to subscribe and unsubscribe an event listener."""
+        """
+        Context manager to subscribe and unsubscribe an event listener.
+
+        :param event: The name of the event to subscribe the listener to.
+        :param listener: The callable listener to be subscribed to the event.
+        :return: A context manager that subscribes the listener when entered
+            and unsubscribes the listener when exited.
+        """
         return self._make_listening(event, listener)
 
     def extracting(
         self, event: str, extractor: Callable[..., _R],
     ) -> ContextManager[List[_R]]:
-        """Context manager to provide a list of custom-extracted event data."""
+        """
+        Context manager to provide a list of custom-extracted event data.
+
+        The returned context manager binds an initially empty list to the
+        variable given in the ``as`` clause of a ``with`` statement. This list
+        is populated with extracts produced by calling ``extractor`` with the
+        event args, each time the ``event`` event occurs.
+
+        :param event: The name of the event to extract data from.
+        :param extractor: The callable extractor that selects data from event
+            args.
+        :return: A context manager that starts extracting data from the event
+            when entered, and stops when exited.
+        """
         return self._make_extracting(event, extractor)
 
     def _hook(self, event: str, args: Tuple[Any, ...]) -> None:
