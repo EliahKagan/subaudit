@@ -21,10 +21,11 @@ down.
 
 This library provides a higher-level interface that allows listeners to be
 subscribed to specific audit events, and unsubscribed from them. It provides
-[context managers](#basic-usage) for using that interface with a convenient
-notation that ensures the listener is unsubscribed. The context managers are
-reentrant—you can nest `with`-statements that listen to events. By default, a
-single audit hook is used for any number of events and listeners.
+[context managers](https://github.com/EliahKagan/subaudit#basic-usage) for
+using that interface with a convenient notation that ensures the listener is
+unsubscribed. The context managers are reentrant—you can nest `with`-statements
+that listen to events. By default, a single audit hook is used for any number
+of events and listeners.
 
 The primary use case for this library is in writing test code.
 
@@ -49,9 +50,10 @@ events, but the Python interpreter and standard library still do not provide
 any events, so only custom events can be used on Python 3.7.
 
 To avoid the performance cost of explicit locking in the audit hook, [some
-operations are assumed atomic](#locking). I believe these assumptions are
-correct for CPython, as well as PyPy and some other implementations, but there
-may exist Python implementations on which these assumptions don’t hold.
+operations are assumed atomic](https://github.com/EliahKagan/subaudit#locking).
+I believe these assumptions are correct for CPython, as well as PyPy and some
+other implementations, but there may exist Python implementations on which
+these assumptions don’t hold.
 
 ## Installation  <!-- Maybe remove this section once badges are added. -->
 
@@ -157,10 +159,12 @@ with contextlib.suppress(ValueError):
 
 To unsubscribe a listener from an event, it must be subscribed to the event.
 Subject to this restriction, calls to [`subscribe` and
-`unsubscribe`](#subauditsubscribe-and-subauditunsubscribe) can happen in any
-order, and [`listening`](#the-subauditlistening-context-manager) and
-[`extracting`](#the-subauditextracting-context-manager) may be arbitrarily
-nested.
+`unsubscribe`](https://github.com/EliahKagan/subaudit#subauditsubscribe-and-subauditunsubscribe)
+can happen in any order, and
+[`listening`](https://github.com/EliahKagan/subaudit#the-subauditlistening-context-manager)
+and
+[`extracting`](https://github.com/EliahKagan/subaudit#the-subauditextracting-context-manager)
+may be arbitrarily nested.
 
 `listening` and `extracting` support reentrant use with both the same event and
 different events. Here’s an example with three `listening` contexts:
@@ -217,8 +221,9 @@ methods corresponding to the four top-level functions listed above. Separate
 purposes:
 
 - It supplies the behavior of [the top-level `listening`, `extracting`,
-  `subscribe`, and `unsubscribe` functions](#basic-usage), which correspond to
-  the same-named methods on a global `Hook` instance.
+  `subscribe`, and `unsubscribe`
+  functions](https://github.com/EliahKagan/subaudit#basic-usage), which
+  correspond to the same-named methods on a global `Hook` instance.
 - It allows multiple audit hooks to be used, for special cases where that might
   be desired.
 - It facilitates customization, as detailed below.
@@ -291,9 +296,9 @@ You should not usually change this. But if you want to, you can construct a
 
 ## Functions related to compatibility
 
-As [noted above](#compatibility), Python supports audit hooks [since
-3.8](https://peps.python.org/pep-0578/). For Python 3.7, but not Python 3.8 or
-later, the subaudit library declares
+As [noted above](https://github.com/EliahKagan/subaudit#compatibility), Python
+supports audit hooks [since 3.8](https://peps.python.org/pep-0578/). For Python
+3.7, but not Python 3.8 or later, the subaudit library declares
 [sysaudit](https://pypi.org/project/sysaudit/) as a dependency.
 
 ### `subaudit.addaudithook` and `subaudit.audit`
@@ -309,10 +314,12 @@ subaudit exports `addaudithook` and `audit` functions.
   [`sysaudit.audit`](https://sysaudit.readthedocs.io/en/latest/#sysaudit.audit).
 
 subaudit uses `subaudit.addaudithook` when it adds its own audit hook (or all
-its own hooks, if you use additional [`Hook`](#subaudithook-objects) instances
+its own hooks, if you use additional
+[`Hook`](https://github.com/EliahKagan/subaudit#subaudithook-objects) instances
 besides the global one implicitly used by [the top-level
-functions](#basic-usage)). subaudit does not itself use `subaudit.audit`, but
-it is whichever `audit` function corresponds to `subaudit.addaudithook`.
+functions](https://github.com/EliahKagan/subaudit#basic-usage)). subaudit does
+not itself use `subaudit.audit`, but it is whichever `audit` function
+corresponds to `subaudit.addaudithook`.
 
 ### `@subaudit.skip_if_unavailable`
 
@@ -369,31 +376,35 @@ decorators, by passing `sys.version_info < (3, 8)` as the condition.
 ## Overview by level of abstraction
 
 From higher to lower level, from the perspective of the top-level
-[`listening`](#the-subauditlistening-context-manager) and
-[`extracting`](#the-subauditextracting-context-manager) functions:
+[`listening`](https://github.com/EliahKagan/subaudit#the-subauditlistening-context-manager)
+and
+[`extracting`](https://github.com/EliahKagan/subaudit#the-subauditextracting-context-manager)
+functions:
 
-- [`subaudit.extracting`](#the-subauditextracting-context-manager) - context
-  manager that listens and extracts to a list
-- [`subaudit.listening`](#the-subauditlistening-context-manager) - context
-  manager to subscribe and unsubscribe a custom listener *(usually use this)*
+- [`subaudit.extracting`](https://github.com/EliahKagan/subaudit#the-subauditextracting-context-manager)
+  \- context manager that listens and extracts to a list
+- [`subaudit.listening`](https://github.com/EliahKagan/subaudit#the-subauditlistening-context-manager)
+  \- context manager to subscribe and unsubscribe a custom listener *(usually
+  use this)*
 - [`subaudit.subscribe` and
-  `subaudit.unsubscribe`](#subauditsubscribe-and-subauditunsubscribe) -
-  manually subscribe/unsubscribe a listener
-- [`subaudit.Hook`](#subaudithook-objects) - abstraction around an audit hook
-  allowing subscribing and unsubscribing for specific events, with
-  `extracting`, `listening`, `subscribe`, and `unsubscribe` instance methods
-- [`subaudit.addaudithook`](#subauditaddaudithook-and-subauditaudit) - trivial
-  abstraction representing whether the function from `sys` or `sysaudit` is
-  used
+  `subaudit.unsubscribe`](https://github.com/EliahKagan/subaudit#subauditsubscribe-and-subauditunsubscribe)
+  \- manually subscribe/unsubscribe a listener
+- [`subaudit.Hook`](https://github.com/EliahKagan/subaudit#subaudithook-objects)
+  \- abstraction around an audit hook allowing subscribing and unsubscribing
+  for specific events, with `extracting`, `listening`, `subscribe`, and
+  `unsubscribe` instance methods
+- [`subaudit.addaudithook`](https://github.com/EliahKagan/subaudit#subauditaddaudithook-and-subauditaudit)
+  \- trivial abstraction representing whether the function from `sys` or
+  `sysaudit` is used
 - [`sys.addaudithook`](https://docs.python.org/3/library/sys.html#sys.addaudithook)
   or
   [`sysaudit.addaudithook`](https://sysaudit.readthedocs.io/en/latest/#sysaudit.addaudithook)
-  \- *not part of subaudit* - install a [PEP
+  \- *not part of subaudit* \- install a [PEP
   578](https://peps.python.org/pep-0578/) audit hook
 
 This list is not exhaustive. For example,
-[`@skip_if_unavailable`](#subauditskip_if_unavailable) is not part of that
-conceptual hierarchy.
+[`@skip_if_unavailable`](https://github.com/EliahKagan/subaudit#subauditskip_if_unavailable)
+is not part of that conceptual hierarchy.
 
 ## Acknowledgements
 
@@ -401,7 +412,7 @@ I’d like to thank:
 
 - [**Brett Langdon**](https://github.com/brettlangdon), who wrote the
   [sysaudit](https://github.com/brettlangdon/sysaudit) library (which subaudit
-  [uses on 3.7](#compatibility)).
+  [uses on 3.7](https://github.com/EliahKagan/subaudit#compatibility)).
 
 - [**David Vassallo**](https://github.com/dmvassallo), for reviewing pull
   requests about testing using audit hooks in [a project we have collaborated
