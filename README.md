@@ -53,6 +53,11 @@ operations are assumed atomic](#locking). I believe these assumptions are
 correct for CPython, as well as PyPy and some other implementations, but there
 may exist Python implementations on which these assumptions don’t hold.
 
+## Installation  <!-- Maybe remove this section once badges are added. -->
+
+Install [the `subaudit` package (PyPI)](https://pypi.org/project/subaudit/) in
+your project’s environment.
+
 ## Basic usage
 
 ### The `subaudit.listening` context manager
