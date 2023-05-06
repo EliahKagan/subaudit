@@ -1,0 +1,19 @@
+<!-- SPDX-License-Identifier: 0BSD -->
+
+# Changelog
+
+*Major* changes are documented in this file.
+
+## [0.1.0]
+
+*Initial release.*
+
+### Added
+
+- `Hook` class.
+- Top-level `subscribe`, `unsubscribe`, `listening`, and `extracting`
+  functions.
+- `@skip_if_unavailable` decorator.
+- Full test suite.
+- Detailed readme.
+- A few example notebooks and scripts.
