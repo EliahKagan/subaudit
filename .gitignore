@@ -1,8 +1,11 @@
 # Cached Python bytecode
 __pycache__/
 
+# Build directory
+/dist/
+
 # Tox files
-.tox/
+/.tox/
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
