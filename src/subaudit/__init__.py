@@ -34,6 +34,8 @@ Example usage:
 
     with subaudit.listening('open', listen_open):
         ...  # Do something that may raise the event.
+
+See the project ``README.md`` for more information on usage.
 """
 
 __all__ = [
@@ -172,6 +174,9 @@ class Hook:
 
         :param event: The name of the event to subscribe the listener to.
         :param listener: The callable listener to be subscribed to the event.
+
+        Overriding ``subscribe`` and ``unsubscribe`` will customize the
+        behavior of ``listening`` and ``extracting``.
         """
         # Produce a suitable key for the event, raising TypeError if we can't.
         if type(event) is not str:
@@ -194,6 +199,9 @@ class Hook:
         :param event: The name of the event to unsubscribe the listener from.
         :param listener: The callable listener to be unsubscribed from the
             event.
+
+        Overriding ``subscribe`` and ``unsubscribe`` will customize the
+        behavior of ``listening`` and ``extracting``.
         """
         with self._lock:
             try:
@@ -234,10 +242,11 @@ class Hook:
         """
         Context manager to provide a list of custom-extracted event data.
 
-        The returned context manager binds an initially empty list to the
-        variable given in the ``as`` clause of a ``with`` statement. This list
-        is populated with extracts produced by calling ``extractor`` with the
-        event args, each time the ``event`` event occurs.
+        This function returns a context manager object. Entering the context
+        manager returns an initially empty list. The list is populated with
+        extracts produced by calling ``extractor`` with the event args. Each
+        time ``event`` occurs, an extract is appended to the list, until the
+        context manager is exited.
 
         :param event: The name of the event to extract data from.
         :param extractor: The callable extractor that selects data from event
@@ -342,5 +351,5 @@ skip_if_unavailable = unittest.skipIf(
     'Python Runtime Audit Hooks (PEP 578) were introduced in Python 3.8.',
 )
 """
-Skip a ``unittest`` test if the standard library does not provide audit events.
+Skip a ``unittest`` test if the standard library doesn't have audit events.
 """
