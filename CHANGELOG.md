@@ -4,7 +4,7 @@
 
 *Major* changes are documented in this file.
 
-## [0.1.0]
+## [0.1.0](https://github.com/EliahKagan/subaudit/releases/tag/0.1.0)
 
 *Initial release.*
 
