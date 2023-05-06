@@ -24,6 +24,16 @@ hook is used for any number of events and listeners.
 The primary use case for this library is in writing test code. Although it can
 be used and customized in a few ways, the top-level ``subaudit.listening`` and
 ``subaudit.extracting`` context manager functions are usually sufficient.
+
+Example usage:
+
+    import subaudit
+
+    def listen_open(path, mode, flags):
+        ...  # Handle the event.
+
+    with subaudit.listening('open', listen_open):
+        ...  # Do something that may raise the event.
 """
 
 __all__ = [
