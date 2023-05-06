@@ -11,7 +11,20 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-"""subaudit: Subscribe and unsubscribe for specific audit events."""
+"""
+subaudit: Subscribe and unsubscribe for specific audit events.
+
+This library provides a higher-level interface that allows listeners to be
+subscribed to specific audit events, and unsubscribed from them. It provides
+context managers for using that interface with a convenient notation that
+ensures the listener is unsubscribed. The context managers are reentrant — you
+can nest ``with``-statements that listen to events. By default, a single audit
+hook is used for any number of events and listeners.
+
+The primary use case for this library is in writing test code. Although it can
+be used and customized in a few ways, the top-level ``subaudit.listening`` and
+``subaudit.extracting`` context manager functions are usually sufficient.
+"""
 
 __all__ = [
     'LockContextManagerFactory',
