@@ -35,19 +35,8 @@ jobs:
       - name: Upgrade PyPA packages
         run: python -m pip install -U pip setuptools wheel
 
-      - if: matrix.os == 'macos-latest'
-        name: Update PATH (macOS)
-        run: echo "$HOME/.local/bin" >>"$GITHUB_PATH"
-
-      - if: matrix.os == 'windows-latest'
-        name: Update PATH (Windows)
-        run: echo "$APPDATA/Python/Scripts" >>"$GITHUB_PATH"
-
-      # TODO: Print the install script commit hash and Poetry version.
       - name: Install poetry
-        run: |
-          curl -sSL https://raw.githubusercontent.com/EliahKagan/install.python-poetry.org/ci-repro/subaudit/install-poetry.py |
-              python -
+        run: python -m pip install poetry
 
       - name: Install tox and tox-gh-actions
         run: python -m pip install -U 'tox==4.*' 'tox-gh-actions==3.*'
