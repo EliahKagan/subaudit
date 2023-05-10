@@ -112,7 +112,7 @@ def test_usable_in_high_churn(
         if platform.python_implementation == 'CPython':
             threshold = datetime.timedelta(seconds=4)
         else:
-            threshold = datetime.timedelta(seconds=11)
+            threshold = datetime.timedelta(seconds=10)
 
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
         atexit.register(lambda: print(f'Time for churn test was: {elapsed!r}'))
