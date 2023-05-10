@@ -16,7 +16,6 @@
 import atexit
 import datetime
 import functools
-import logging
 import platform
 import random
 from types import MethodType
@@ -24,15 +23,11 @@ from typing import List, Sequence, cast
 
 import attrs
 import clock_timer
-from pprint import pformat
 import pytest
 from pytest_subtests import SubTests
 
 import subaudit
 import tests.conftest as ct
-
-_logger = logging.getLogger(__name__)
-"""Logger for this test module. Used to report details about churn tests."""
 
 
 @pytest.mark.implementation_detail
@@ -65,38 +60,6 @@ class _ChurnCounts:
 
     iterations: int
     """Number of test iterations."""
-
-
-@attrs.frozen
-class _ChurnReport:
-    """Report from a run of the churn test."""
-
-    counts: _ChurnCounts
-    """The test's count parameters."""
-
-    elapsed: datetime.timedelta
-    """The test's elapsed time."""
-
-
-_churn_reports: List[_ChurnReport] = []
-"""Reports from the churn tests."""
-
-
-@atexit.register
-def _output_churn_reports() -> None:
-    """Print some info from ``_churn_reports``, depending on logging level."""
-    if not _churn_reports:
-        return
-
-    logging.basicConfig(level=logging.DEBUG)  # FIXME: Remove after debugging.
-
-    if _logger.isEnabledFor(logging.DEBUG):
-        _logger.debug('Churn reports: %s', pformat(_churn_reports))
-
-    if _logger.isEnabledFor(logging.INFO):
-        deltas = (report.elapsed for report in _churn_reports)
-        total = sum(deltas, start=datetime.timedelta(0))
-        _logger.info('Churn total time: %s', total)
 
 
 @pytest.mark.slow
@@ -152,5 +115,5 @@ def test_usable_in_high_churn(
             threshold = datetime.timedelta(seconds=11)
 
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
-        _churn_reports.append(_ChurnReport(counts, elapsed))
+        atexit.register(lambda: print(f'Time for churn test was: {elapsed!r}'))
         assert elapsed <= threshold
