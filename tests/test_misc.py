@@ -13,8 +13,10 @@
 
 """Bikeshed for tests not placed in one of the more specific test modules."""
 
+import atexit
 import datetime
 import functools
+import platform
 import random
 from types import MethodType
 from typing import List, Sequence, cast
@@ -107,5 +109,11 @@ def test_usable_in_high_churn(
         assert all_observations == all_expected_observations
 
     with subtests.test('elapsed time not excessive'):
+        if platform.python_implementation == 'CPython':
+            threshold = datetime.timedelta(seconds=4)
+        else:
+            threshold = datetime.timedelta(seconds=10)
+
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
-        assert elapsed <= datetime.timedelta(seconds=8)  # Usually much faster.
+        atexit.register(lambda: print(f'Time for churn test was: {elapsed!r}'))
+        assert elapsed <= threshold
