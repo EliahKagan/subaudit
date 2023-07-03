@@ -6,9 +6,7 @@ updates:
       interval: monthly
     allow:
       - dependency-type: all
-    groups:
-      python-dependencies:
-        patterns: ['*']
+    open-pull-requests-limit: 20
 
   - package-ecosystem: github-actions
     directory: '/'
