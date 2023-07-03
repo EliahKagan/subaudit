@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: '/'
+    schedule:
+      interval: monthly
+    allow:
+      - dependency-type: all
+    groups:
+      python-dependencies:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
