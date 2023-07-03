@@ -25,5 +25,4 @@ jobs:
       - name: Markdown Lint
         uses: DavidAnson/markdownlint-cli2-action@v11
         with:
-          config: '.github/workflows/.markdownlint.json'
           globs: '**/*.md'
