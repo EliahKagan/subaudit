@@ -274,19 +274,19 @@ tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipyth
 
 [[package]]
 name = "flake8"
-version = "6.1.0"
+version = "7.0.0"
 description = "the modular source code checker: pep8 pyflakes and co"
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "flake8-6.1.0-py2.py3-none-any.whl", hash = "sha256:ffdfce58ea94c6580c77888a86506937f9a1a227dfcd15f245d694ae20a6b6e5"},
-    {file = "flake8-6.1.0.tar.gz", hash = "sha256:d5b3857f07c030bdb5bf41c7f53799571d75c4491748a3adcd47de929e34cd23"},
+    {file = "flake8-7.0.0-py2.py3-none-any.whl", hash = "sha256:a6dfbb75e03252917f2473ea9653f7cd799c3064e54d4c8140044c5c065f53c3"},
+    {file = "flake8-7.0.0.tar.gz", hash = "sha256:33f96621059e65eec474169085dc92bf26e7b2d47366b70be2f67ab80dc25132"},
 ]
 
 [package.dependencies]
 mccabe = ">=0.7.0,<0.8.0"
 pycodestyle = ">=2.11.0,<2.12.0"
-pyflakes = ">=3.1.0,<3.2.0"
+pyflakes = ">=3.2.0,<3.3.0"
 
 [[package]]
 name = "importlib-metadata"
@@ -321,13 +321,13 @@ files = [
 
 [[package]]
 name = "ipykernel"
-version = "6.28.0"
+version = "6.29.0"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.28.0-py3-none-any.whl", hash = "sha256:c6e9a9c63a7f4095c0a22a79f765f079f9ec7be4f2430a898ddea889e8665661"},
-    {file = "ipykernel-6.28.0.tar.gz", hash = "sha256:69c11403d26de69df02225916f916b37ea4b9af417da0a8c827f84328d88e5f3"},
+    {file = "ipykernel-6.29.0-py3-none-any.whl", hash = "sha256:076663ca68492576f051e4af7720d33f34383e655f2be0d544c8b1c9de915b2f"},
+    {file = "ipykernel-6.29.0.tar.gz", hash = "sha256:b5dd3013cab7b330df712891c96cd1ab868c27a7159e606f762015e9bf8ceb3f"},
 ]
 
 [package.dependencies]
@@ -350,7 +350,7 @@ cov = ["coverage[toml]", "curio", "matplotlib", "pytest-cov", "trio"]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling", "trio"]
 pyqt5 = ["pyqt5"]
 pyside6 = ["pyside6"]
-test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio", "pytest-cov", "pytest-timeout"]
+test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio (==0.23.2)", "pytest-cov", "pytest-timeout"]
 
 [[package]]
 name = "ipython"
@@ -662,13 +662,13 @@ files = [
 
 [[package]]
 name = "nest-asyncio"
-version = "1.5.8"
+version = "1.6.0"
 description = "Patch asyncio to allow nested event loops"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "nest_asyncio-1.5.8-py3-none-any.whl", hash = "sha256:accda7a339a70599cb08f9dd09a67e0c2ef8d8d6f4c07f96ab203f2ae254e48d"},
-    {file = "nest_asyncio-1.5.8.tar.gz", hash = "sha256:25aa2ca0d2a5b5531956b9e273b45cf664cae2b145101d73b86b199978d48fdb"},
+    {file = "nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c"},
+    {file = "nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe"},
 ]
 
 [[package]]
@@ -785,27 +785,27 @@ wcwidth = "*"
 
 [[package]]
 name = "psutil"
-version = "5.9.7"
+version = "5.9.8"
 description = "Cross-platform lib for process and system monitoring in Python."
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 files = [
-    {file = "psutil-5.9.7-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:0bd41bf2d1463dfa535942b2a8f0e958acf6607ac0be52265ab31f7923bcd5e6"},
-    {file = "psutil-5.9.7-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:5794944462509e49d4d458f4dbfb92c47539e7d8d15c796f141f474010084056"},
-    {file = "psutil-5.9.7-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:fe361f743cb3389b8efda21980d93eb55c1f1e3898269bc9a2a1d0bb7b1f6508"},
-    {file = "psutil-5.9.7-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:e469990e28f1ad738f65a42dcfc17adaed9d0f325d55047593cb9033a0ab63df"},
-    {file = "psutil-5.9.7-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:3c4747a3e2ead1589e647e64aad601981f01b68f9398ddf94d01e3dc0d1e57c7"},
-    {file = "psutil-5.9.7-cp27-none-win32.whl", hash = "sha256:1d4bc4a0148fdd7fd8f38e0498639ae128e64538faa507df25a20f8f7fb2341c"},
-    {file = "psutil-5.9.7-cp27-none-win_amd64.whl", hash = "sha256:4c03362e280d06bbbfcd52f29acd79c733e0af33d707c54255d21029b8b32ba6"},
-    {file = "psutil-5.9.7-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:ea36cc62e69a13ec52b2f625c27527f6e4479bca2b340b7a452af55b34fcbe2e"},
-    {file = "psutil-5.9.7-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1132704b876e58d277168cd729d64750633d5ff0183acf5b3c986b8466cd0284"},
-    {file = "psutil-5.9.7-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fe8b7f07948f1304497ce4f4684881250cd859b16d06a1dc4d7941eeb6233bfe"},
-    {file = "psutil-5.9.7-cp36-cp36m-win32.whl", hash = "sha256:b27f8fdb190c8c03914f908a4555159327d7481dac2f01008d483137ef3311a9"},
-    {file = "psutil-5.9.7-cp36-cp36m-win_amd64.whl", hash = "sha256:44969859757f4d8f2a9bd5b76eba8c3099a2c8cf3992ff62144061e39ba8568e"},
-    {file = "psutil-5.9.7-cp37-abi3-win32.whl", hash = "sha256:c727ca5a9b2dd5193b8644b9f0c883d54f1248310023b5ad3e92036c5e2ada68"},
-    {file = "psutil-5.9.7-cp37-abi3-win_amd64.whl", hash = "sha256:f37f87e4d73b79e6c5e749440c3113b81d1ee7d26f21c19c47371ddea834f414"},
-    {file = "psutil-5.9.7-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:032f4f2c909818c86cea4fe2cc407f1c0f0cde8e6c6d702b28b8ce0c0d143340"},
-    {file = "psutil-5.9.7.tar.gz", hash = "sha256:3f02134e82cfb5d089fddf20bb2e03fd5cd52395321d1c8458a9e58500ff417c"},
+    {file = "psutil-5.9.8-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:26bd09967ae00920df88e0352a91cff1a78f8d69b3ecabbfe733610c0af486c8"},
+    {file = "psutil-5.9.8-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:05806de88103b25903dff19bb6692bd2e714ccf9e668d050d144012055cbca73"},
+    {file = "psutil-5.9.8-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:611052c4bc70432ec770d5d54f64206aa7203a101ec273a0cd82418c86503bb7"},
+    {file = "psutil-5.9.8-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:50187900d73c1381ba1454cf40308c2bf6f34268518b3f36a9b663ca87e65e36"},
+    {file = "psutil-5.9.8-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:02615ed8c5ea222323408ceba16c60e99c3f91639b07da6373fb7e6539abc56d"},
+    {file = "psutil-5.9.8-cp27-none-win32.whl", hash = "sha256:36f435891adb138ed3c9e58c6af3e2e6ca9ac2f365efe1f9cfef2794e6c93b4e"},
+    {file = "psutil-5.9.8-cp27-none-win_amd64.whl", hash = "sha256:bd1184ceb3f87651a67b2708d4c3338e9b10c5df903f2e3776b62303b26cb631"},
+    {file = "psutil-5.9.8-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:aee678c8720623dc456fa20659af736241f575d79429a0e5e9cf88ae0605cc81"},
+    {file = "psutil-5.9.8-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8cb6403ce6d8e047495a701dc7c5bd788add903f8986d523e3e20b98b733e421"},
+    {file = "psutil-5.9.8-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d06016f7f8625a1825ba3732081d77c94589dca78b7a3fc072194851e88461a4"},
+    {file = "psutil-5.9.8-cp36-cp36m-win32.whl", hash = "sha256:7d79560ad97af658a0f6adfef8b834b53f64746d45b403f225b85c5c2c140eee"},
+    {file = "psutil-5.9.8-cp36-cp36m-win_amd64.whl", hash = "sha256:27cc40c3493bb10de1be4b3f07cae4c010ce715290a5be22b98493509c6299e2"},
+    {file = "psutil-5.9.8-cp37-abi3-win32.whl", hash = "sha256:bc56c2a1b0d15aa3eaa5a60c9f3f8e3e565303b465dbf57a1b730e7a2b9844e0"},
+    {file = "psutil-5.9.8-cp37-abi3-win_amd64.whl", hash = "sha256:8db4c1b57507eef143a15a6884ca10f7c73876cdf5d51e713151c1236a0e68cf"},
+    {file = "psutil-5.9.8-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:d16bbddf0693323b8c6123dd804100241da461e41d6e332fb0ba6058f630f8c8"},
+    {file = "psutil-5.9.8.tar.gz", hash = "sha256:6be126e3225486dff286a8fb9a06246a5253f4c7c53b475ea5f5ac934e64194c"},
 ]
 
 [package.extras]
@@ -860,13 +860,13 @@ files = [
 
 [[package]]
 name = "pyflakes"
-version = "3.1.0"
+version = "3.2.0"
 description = "passive checker of Python programs"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pyflakes-3.1.0-py2.py3-none-any.whl", hash = "sha256:4132f6d49cb4dae6819e5379898f2b8cce3c5f23994194c24b77d5da2e36f774"},
-    {file = "pyflakes-3.1.0.tar.gz", hash = "sha256:a0aae034c444db0071aa077972ba4768d40c830d9539fd45bf4cd3f8f6992efc"},
+    {file = "pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a"},
+    {file = "pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f"},
 ]
 
 [[package]]
@@ -915,13 +915,13 @@ testutils = ["gitpython (>3)"]
 
 [[package]]
 name = "pyright"
-version = "1.1.344"
+version = "1.1.349"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.344-py3-none-any.whl", hash = "sha256:ab7117a911ce25fcd317f42272579f9ae53a6abc8b8a15f6aa069a11281953ee"},
-    {file = "pyright-1.1.344.tar.gz", hash = "sha256:ab7c962f00dd8141a5a0192c1060fb34b92d1f9047ad70dda45229938051922b"},
+    {file = "pyright-1.1.349-py3-none-any.whl", hash = "sha256:8f9189ddb62222a35b3525666225f1d8f24244cbff5893c42b3f001d8ebafa1a"},
+    {file = "pyright-1.1.349.tar.gz", hash = "sha256:af4ab7f103a0b2a92e5fbf248bf734e9a98247991350ac989ead34e97148f91c"},
 ]
 
 [package.dependencies]
@@ -957,17 +957,17 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-check"
-version = "2.2.3"
+version = "2.3.1"
 description = "A pytest plugin that allows multiple failures per test."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest_check-2.2.3-py3-none-any.whl", hash = "sha256:d2643066fb805ca380b9251ef641a22dddc339018179a1e5f0b4626a5ff7e560"},
-    {file = "pytest_check-2.2.3.tar.gz", hash = "sha256:6df03264b6bbcf25cd8615120cda03b4e6d11fdb2b7c8dde6a9c8fef18a7495c"},
+    {file = "pytest_check-2.3.1-py3-none-any.whl", hash = "sha256:c54c18f0b890cac1c610c78ef2bb3d8ecb29cf33d1cf09fc1166802d6ab88e28"},
+    {file = "pytest_check-2.3.1.tar.gz", hash = "sha256:51b8f18a8ccaa426c5d913c4e0e46f014aaa7579481ea03d22d7e1f498f689b2"},
 ]
 
 [package.dependencies]
-pytest = "*"
+pytest = ">=7.0.0"
 
 [[package]]
 name = "pytest-mock"
@@ -1387,13 +1387,13 @@ files = [
 
 [[package]]
 name = "wcwidth"
-version = "0.2.12"
+version = "0.2.13"
 description = "Measures the displayed width of unicode strings in a terminal"
 optional = false
 python-versions = "*"
 files = [
-    {file = "wcwidth-0.2.12-py2.py3-none-any.whl", hash = "sha256:f26ec43d96c8cbfed76a5075dac87680124fa84e0855195a6184da9c187f133c"},
-    {file = "wcwidth-0.2.12.tar.gz", hash = "sha256:f01c104efdf57971bcb756f054dd58ddec5204dd15fa31d6503ea57947d97c02"},
+    {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
+    {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
 ]
 
 [[package]]
@@ -1493,4 +1493,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "65783388a2138fe24c21592df99956f8cb6a513b742b77b7b1827dde2add9837"
+content-hash = "85a12744b84c31576e241d3f6d1764ffc572c84b05d79a6e88ceb7a738f8b2c0"
