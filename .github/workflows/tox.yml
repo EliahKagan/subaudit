@@ -9,8 +9,17 @@ jobs:
   tox:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
+        os:
+          - ubuntu-22.04  # For Python 3.7 only (unavailable on >= 24.04).
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-13  # These images are x86-64 (amd64).
+          - macos-15  # These images are Apple Silicon (aarch64, amd64).
+          - windows-latest
+          - windows-11-arm
+
         python-version:
+          # CPython
           - '3.7'
           - '3.8'
           - '3.9'
@@ -18,8 +27,88 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          # TODO: Currently, installing `poetry` on CPython 3.13t (nogil) fails
+          # on all platforms when building native code for the `msgpack`
+          # dependency, and similarly on some platforms for other dependencies.
+          # Once that is resolved or can be avoided, then add 3.13t.
+          # - '3.13t'
+
+          # PyPy
+          - 'pypy-3.7'
           - 'pypy-3.8'
           - 'pypy-3.9'
+          - 'pypy-3.10'
+          - 'pypy-3.11'
+
+        exclude:
+          # Use Ubuntu 22.04 only to test CPython 3.7, and no other Pythons.
+          - os: ubuntu-22.04
+            python-version: '3.8'
+          - os: ubuntu-22.04
+            python-version: '3.9'
+          - os: ubuntu-22.04
+            python-version: '3.10'
+          - os: ubuntu-22.04
+            python-version: '3.11'
+          - os: ubuntu-22.04
+            python-version: '3.12'
+          - os: ubuntu-22.04
+            python-version: '3.13'
+          - os: ubuntu-22.04
+            python-version: 'pypy-3.7'
+          - os: ubuntu-22.04
+            python-version: 'pypy-3.8'
+
+          # CPython 3.7 is not available on Ubuntu 24.04 and higher.
+          - os: ubuntu-latest
+            python-version: '3.7'
+
+          # Installing `poetry` fails in PyPy 3.7 and PyPy 3.8 on Ubuntu
+          # x86-64, with an error building its `cryptography` dependency.
+          - os: ubuntu-latest
+            python-version: 'pypy-3.7'
+          - os: ubuntu-latest
+            python-version: 'pypy-3.8'
+
+          # CPython 3.7 are not available on Ubuntu 24.04 and higher for arm64.
+          - os: ubuntu-24.04-arm
+            python-version: '3.7'
+
+          # As on amd64, installing `poetry` fails in PyPy 3.7 and PyPy 3.8 on
+          # Ubuntu arm64, with an error building its `cryptography` dependency.
+          - os: ubuntu-24.04-arm
+            python-version: 'pypy-3.7'
+          - os: ubuntu-24.04-arm
+            python-version: 'pypy-3.8'
+
+          # CPython 3.7 and PyPy 3.7 are not available on macOS 15 arm64.
+          - os: macos-15
+            python-version: '3.7'
+          - os: macos-15
+            python-version: 'pypy-3.7'
+
+          # Only CPython 3.11 and higher are available on Windows 11 arm64.
+          - os: windows-11-arm
+            python-version: '3.7'
+          - os: windows-11-arm
+            python-version: '3.8'
+          - os: windows-11-arm
+            python-version: '3.9'
+          - os: windows-11-arm
+            python-version: '3.10'
+
+          # No version of PyPy is available on Windows 11 arm64.
+          - os: windows-11-arm
+            python-version: 'pypy-3.7'
+          - os: windows-11-arm
+            python-version: 'pypy-3.8'
+          - os: windows-11-arm
+            python-version: 'pypy-3.9'
+          - os: windows-11-arm
+            python-version: 'pypy-3.10'
+          - os: windows-11-arm
+            python-version: 'pypy-3.11'
+
         include:
           - experimental: false
 
