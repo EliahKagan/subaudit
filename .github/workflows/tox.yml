@@ -112,8 +112,6 @@ jobs:
         include:
           - experimental: false
 
-      fail-fast: false
-
     continue-on-error: ${{ matrix.experimental }}
 
     runs-on: ${{ matrix.os }}
@@ -139,3 +137,21 @@ jobs:
 
       - name: Check with tox
         run: tox
+
+  all-pass:
+    name: All tox checks pass
+
+    needs:
+      - tox
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Some failed
+        if: contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'failure')
+        run: |
+          false
+
+      - name: All passed
+        run: |
+          true
