@@ -17,7 +17,7 @@ jobs:
       - name: Check out source repository
         uses: actions/checkout@v4
       - name: Check Markdown links
-        uses: umbrelladocs/action-linkspector@v1
+        uses: tcort/github-action-markdown-link-check@v1
 
   markdownlint-cli2:
     name: Lint Markdown
