@@ -62,3 +62,7 @@ def test_skip_if_unavailable_does_not_skip_since_3_8(
 
     with check('The "wrapped" function should be called'):
         wrapped.assert_called_once_with()
+
+
+def test_zzzfail():
+    assert False
