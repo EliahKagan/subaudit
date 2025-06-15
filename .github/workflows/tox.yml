@@ -144,6 +144,9 @@ jobs:
     needs:
       - tox
 
+    # Don't skip `all-pass` on cancellation, since a skipped required check won't block auto-merge.
+    if: always()
+
     runs-on: ubuntu-latest
 
     steps:
