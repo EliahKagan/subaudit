@@ -13,8 +13,8 @@ jobs:
           - ubuntu-22.04  # For Python 3.7 only (unavailable on >= 24.04).
           - ubuntu-latest
           - ubuntu-24.04-arm
-          - macos-13  # These images are x86-64 (amd64).
-          - macos-15  # These images are Apple Silicon (aarch64, amd64).
+          - macos-15-intel  # These images are x86-64 (amd64).
+          - macos-15  # These images are Apple Silicon (aarch64, arm64).
           - windows-latest
           - windows-11-arm
 
@@ -30,8 +30,10 @@ jobs:
           # TODO: Currently, installing `poetry` on CPython 3.13t (nogil) fails
           # on all platforms when building native code for the `msgpack`
           # dependency, and similarly on some platforms for other dependencies.
-          # Once that is resolved or can be avoided, then add 3.13t.
+          # Once that is resolved or can be avoided, then add 3.13t and 3.14t.
           # - '3.13t'
+          - '3.14'
+          # - '3.14t'
 
           # PyPy
           - 'pypy-3.7'
@@ -54,6 +56,8 @@ jobs:
             python-version: '3.12'
           - os: ubuntu-22.04
             python-version: '3.13'
+          - os: ubuntu-22.04
+            python-version: '3.14'
           - os: ubuntu-22.04
             python-version: 'pypy-3.7'
           - os: ubuntu-22.04
@@ -87,6 +91,15 @@ jobs:
           - os: macos-15
             python-version: 'pypy-3.7'
 
+          # Installing `poetry` fails in PyPy 3.9 on Windows x86-64, with an
+          # error building its `zstandard` dependency. Curiously, this only
+          # happens in PyPy 3.9, and not in earlier or later versions. Probably
+          # an earlier version of `poetry` or one of its dependencies could be
+          # specified in order to avoid this, but for now I just skip PyPy 3.9
+          # on Windows.
+          - os: windows-latest
+            python-version: 'pypy-3.9'
+
           # Only CPython 3.11 and higher are available on Windows 11 arm64.
           - os: windows-11-arm
             python-version: '3.7'
@@ -111,6 +124,8 @@ jobs:
 
         include:
           - experimental: false
+
+      fail-fast: true
 
     continue-on-error: ${{ matrix.experimental }}
 
