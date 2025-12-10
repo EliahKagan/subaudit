@@ -1,6 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:best-practices",
+    ":prHourlyLimitNone",
+    ":prConcurrentLimit10",
+    ":rebaseStalePrs",
+    ":enableVulnerabilityAlertsWithLabel(security)",
+    "security:openssf-scorecard"
+  ],
+  "ignorePresets": ["security:minimumReleaseAgeNpm", "group:recommended"],
+  "timezone": "America/New_York",
+  "schedule": ["* 0-3 1 * *"],
+  "minimumReleaseAge": "7 days",
+  "separateMajorMinor": false,
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-3 1 * *"]
+  },
+  "packageRules": [
+    {
+      "description": "Group non-security updates together",
+      "matchManagers": ["poetry", "github-actions"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest", "pinDigest"],
+      "groupName": "updates"
+    }
   ]
 }
