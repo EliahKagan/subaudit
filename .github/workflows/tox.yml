@@ -11,6 +11,7 @@ jobs:
       matrix:
         os:
           - ubuntu-22.04  # For Python 3.7 only (unavailable on >= 24.04).
+          - ubuntu-24.04  # For Python 3.8 and 3.9 only (unavailable on >= 26.04).
           - ubuntu-latest
           - ubuntu-24.04-arm
           - macos-15-intel  # These images are x86-64 (amd64).
@@ -63,9 +64,37 @@ jobs:
           - os: ubuntu-22.04
             python-version: 'pypy-3.8'
 
-          # CPython 3.7 is not available on Ubuntu 24.04 and higher.
+          # Use Ubuntu 24.04 only to test CPython 3.8 and 3.9, and no other Pythons.
+          - os: ubuntu-24.04
+            python-version: '3.7'
+          - os: ubuntu-24.04
+            python-version: '3.10'
+          - os: ubuntu-24.04
+            python-version: '3.11'
+          - os: ubuntu-24.04
+            python-version: '3.12'
+          - os: ubuntu-24.04
+            python-version: '3.13'
+          - os: ubuntu-24.04
+            python-version: '3.14'
+          - os: ubuntu-24.04
+            python-version: 'pypy-3.7'
+          - os: ubuntu-24.04
+            python-version: 'pypy-3.8'
+          - os: ubuntu-24.04
+            python-version: 'pypy-3.9'
+          - os: ubuntu-24.04
+            python-version: 'pypy-3.10'
+          - os: ubuntu-24.04
+            python-version: 'pypy-3.11'
+
+          # CPython 3.7, 3.8, and 3.9 are not available on Ubuntu 26.04 and higher.
           - os: ubuntu-latest
             python-version: '3.7'
+          - os: ubuntu-latest
+            python-version: '3.8'
+          - os: ubuntu-latest
+            python-version: '3.9'
 
           # Installing `poetry` fails in PyPy 3.7 and PyPy 3.8 on Ubuntu
           # x86-64, with an error building its `cryptography` dependency.
@@ -146,8 +175,27 @@ jobs:
       - name: Upgrade PyPA packages
         run: python -m pip install -U pip 'setuptools; python_version <"3.12"' wheel
 
+      # On Linux, `poetry` depends on `cryptography` (via `keyring` and
+      # `SecretStorage`), which has no wheels for PyPy < 3.11. Starting in
+      # `cryptography` 47.0.0, building it from source uses PyO3 >= 0.28, which
+      # does not support PyPy < 3.11. So use an earlier version in that case.
       - name: Install poetry, and poetry-plugin-export if needed
-        run: python -m pip install -U poetry 'poetry-plugin-export; python_version >="3.9"'
+        run: >-
+          python -m pip install -U poetry
+          'poetry-plugin-export; python_version >="3.9"'
+          'cryptography <47; platform_python_implementation =="PyPy" and python_version <"3.11" and sys_platform =="linux"'
+
+      # On Windows, the PyPy 3.11 wheel of `backports.zstd` (which `poetry`
+      # uses via `pbs-installer`) bundles a DLL that it finds via code that
+      # `delvewheel` added to `backports/__init__.py`. But `backports.tarfile`
+      # (which `poetry` uses via `keyring` and `jaraco.context`) also has a
+      # `backports/__init__.py` and can overwrite it, so importing
+      # `backports.zstd` fails, and `poetry` with it. Reinstalling
+      # `backports.zstd` restores its `__init__.py`, which still works for
+      # `backports.tarfile`, as they are in the same directory.
+      - name: Make sure backports.zstd can find its DLL
+        if: runner.os == 'Windows' && matrix.python-version == 'pypy-3.11'
+        run: python -m pip install --force-reinstall --no-deps backports.zstd
 
       - name: Install tox and tox-gh-actions
         run: python -m pip install -U 'tox ==4.*' 'tox-gh-actions ==3.*'
