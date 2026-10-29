@@ -185,6 +185,18 @@ jobs:
           'poetry-plugin-export; python_version >="3.9"'
           'cryptography <47; platform_python_implementation =="PyPy" and python_version <"3.11" and sys_platform =="linux"'
 
+      # On Windows, the PyPy 3.11 wheel of `backports.zstd` (which `poetry`
+      # uses via `pbs-installer`) bundles a DLL that it finds via code that
+      # `delvewheel` added to `backports/__init__.py`. But `backports.tarfile`
+      # (which `poetry` uses via `keyring` and `jaraco.context`) also has a
+      # `backports/__init__.py` and can overwrite it, so importing
+      # `backports.zstd` fails, and `poetry` with it. Reinstalling
+      # `backports.zstd` restores its `__init__.py`, which still works for
+      # `backports.tarfile`, as they are in the same directory.
+      - name: Make sure backports.zstd can find its DLL
+        if: runner.os == 'Windows' && matrix.python-version == 'pypy-3.11'
+        run: python -m pip install --force-reinstall --no-deps backports.zstd
+
       - name: Install tox and tox-gh-actions
         run: python -m pip install -U 'tox ==4.*' 'tox-gh-actions ==3.*'
 
