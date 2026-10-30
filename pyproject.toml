@@ -92,6 +92,7 @@ multi_line_output = 3
 
 [tool.mypy]
 disallow_untyped_defs = true
+strict_equality = true
 
 [[tool.mypy.overrides]]
 module = "clock_timer"
