@@ -154,7 +154,7 @@ jobs:
         include:
           - experimental: false
 
-      fail-fast: true
+      fail-fast: false
 
     continue-on-error: ${{ matrix.experimental }}
 
