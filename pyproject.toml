@@ -78,7 +78,7 @@ pylint = [
 pyright = "^1.1.401"
 
 [tool.poetry.group.notebook.dependencies]
-ipykernel = { version = "^6.29.5", python = "^3.8" }
+ipykernel = { version = "^7.0.0", python = "^3.8" }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
