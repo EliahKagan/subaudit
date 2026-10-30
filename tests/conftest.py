@@ -88,7 +88,7 @@ class MaybeRaiser(ShortStrEnum):
 
     def __call__(self) -> None:
         """Maybe raise an exception."""
-        if self is self.RAISE:
+        if self is MaybeRaiser.RAISE:
             raise self.Exception
 
 

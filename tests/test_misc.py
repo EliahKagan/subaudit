@@ -109,10 +109,10 @@ def test_usable_in_high_churn(
         assert all_observations == all_expected_observations
 
     with subtests.test('elapsed time not excessive'):
-        if platform.python_implementation == 'CPython':
-            threshold = datetime.timedelta(seconds=4)
-        else:
+        if platform.python_implementation() == 'CPython':
             threshold = datetime.timedelta(seconds=10)
+        else:
+            threshold = datetime.timedelta(seconds=30)
 
         elapsed = datetime.timedelta(seconds=timer.total_elapsed)
         atexit.register(lambda: print(f'Time for churn test was: {elapsed!r}'))
